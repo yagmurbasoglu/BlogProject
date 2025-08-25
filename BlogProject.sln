@@ -16,6 +16,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogProject.Infrastructure", "Infrastructure\BlogProject.Infrastructure\BlogProject.Infrastructure.csproj", "{F1AE9878-6009-498E-B955-9F90C8CF395F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogProject.Persistence", "Infrastructure\BlogProject.Persistence\BlogProject.Persistence.csproj", "{201EE2B7-BA04-4B40-9C38-EEC93FB9FD51}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F3107431-D956-46D0-BC39-1F3EE613665D} = {F3107431-D956-46D0-BC39-1F3EE613665D}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogProject.Api", "Presentation\BlogProject.Api\BlogProject.Api.csproj", "{974334EE-0486-48A5-AF0B-E3E72FEA2E9E}"
 EndProject
