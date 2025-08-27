@@ -27,6 +27,12 @@ namespace BlogProject.Application.Features.Auth.Commands.Register
             if (!result.Succeeded)
                 throw new Exception(string.Join(" | ", result.Errors.Select(e => e.Description)));
 
+
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(user, "User"); // otomatik User rolü
+            }
+
             return user.Id;
         }
     }

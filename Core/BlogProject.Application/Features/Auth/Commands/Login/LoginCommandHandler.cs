@@ -34,6 +34,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, string>
             new Claim(ClaimTypes.Name, user.UserName ?? "")
         };
 
+        // ✅ rolleri ekle
+        var roles = await _userManager.GetRolesAsync(user);
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

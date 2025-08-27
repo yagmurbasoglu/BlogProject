@@ -1,34 +1,46 @@
 ﻿using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 
-namespace BlogProject.Application.Features.Comments.Commands.UpdateComment;
-
-public class UpdateCommentHandler : IRequestHandler<UpdateCommentCommand, bool>
+namespace BlogProject.Application.Features.Comments.Commands.UpdateComment
 {
-    private readonly IUnitOfWork _uow;
-
-    public UpdateCommentHandler(IUnitOfWork uow)
+    public class UpdateCommentHandler : IRequestHandler<UpdateCommentCommand, bool>
     {
-        _uow = uow;
-    }
+        private readonly IUnitOfWork _uow;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-    public async Task<bool> Handle(UpdateCommentCommand request, CancellationToken cancellationToken)
-    {
-        var repo = _uow.Repository<Comment>();
-        var comment = await repo.GetByIdAsync(request.Id, false, cancellationToken);
+        public UpdateCommentHandler(IUnitOfWork uow, UserManager<ApplicationUser> userManager)
+        {
+            _uow = uow;
+            _userManager = userManager;
+        }
 
-        if (comment == null || comment.IsDeleted)
-            return false;
+        public async Task<bool> Handle(UpdateCommentCommand request, CancellationToken cancellationToken)
+        {
+            var repo = _uow.Repository<Comment>();
+            var comment = await repo.GetByIdAsync(request.Id, false, cancellationToken);
 
-        // Sadece kendi yorumunu güncelleyebilsin
-        if (comment.AuthorId != request.AuthorId)
-            return false;
+            if (comment == null || comment.IsDeleted)
+                return false;
 
-        comment.Content = request.Content;
-        repo.Update(comment);
+            // İstek yapan user
+            var requester = await _userManager.FindByIdAsync(request.AuthorId.ToString());
+            if (requester == null) return false;
 
-        await _uow.SaveChangesAsync(cancellationToken);
-        return true;
+            // Admin mi?
+            var isAdmin = await _userManager.IsInRoleAsync(requester, "Admin");
+
+            // Eğer yorumun sahibi değilse ve admin değilse → yetkisiz
+            if (comment.AuthorId != request.AuthorId && !isAdmin)
+                return false;
+
+            comment.Content = request.Content;
+            comment.CreatedAtUtc = DateTime.UtcNow;
+
+            repo.Update(comment);
+            await _uow.SaveChangesAsync(cancellationToken);
+            return true;
+        }
     }
 }

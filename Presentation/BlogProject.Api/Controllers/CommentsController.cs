@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BlogProject.Application.Features.Comments.Commands.UpdateComment;
 using BlogProject.Application.Features.Comments.Commands.DeleteComment;
+using System.Security.Claims;
 
 namespace BlogProject.Api.Controllers;
 
@@ -44,7 +45,8 @@ public class CommentsController : ControllerBase
         [FromRoute(Name = "commentId")] Guid commentId,
         [FromBody] UpdateCommentCommand command)
     {
-        var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
 
         command.Id = commentId;
         command.AuthorId = userId;
@@ -64,7 +66,8 @@ public class CommentsController : ControllerBase
     public async Task<IActionResult> Delete(
         [FromRoute(Name = "commentId")] Guid commentId)
     {
-        var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        ;
 
         var command = new DeleteCommentCommand
         {

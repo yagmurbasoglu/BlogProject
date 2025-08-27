@@ -1,6 +1,8 @@
 ﻿using BlogProject.Application.Features.Auth.Commands.Login;
 using BlogProject.Application.Features.Auth.Commands.Register;
+using BlogProject.Application.Features.Auth.Commands.PromoteToAdmin; // ✅ yeni ekledik
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlogProject.Api.Controllers
@@ -28,6 +30,18 @@ namespace BlogProject.Api.Controllers
         {
             var token = await _mediator.Send(command);
             return Ok(new { Token = token });
+        }
+
+        [HttpPost("promote-to-admin/{userId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> PromoteToAdmin(Guid userId)
+        {
+            var success = await _mediator.Send(new PromoteToAdminCommand { UserId = userId });
+
+            if (!success)
+                return NotFound(new { Message = "Kullanıcı bulunamadı veya rol atanamadı" });
+
+            return Ok(new { Message = "Kullanıcı Admin rolüne yükseltildi" });
         }
     }
 }
