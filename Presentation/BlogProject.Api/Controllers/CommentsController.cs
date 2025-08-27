@@ -38,26 +38,46 @@ public class CommentsController : ControllerBase
     }
 
     // ✅ Update
-    [HttpPut("{id}")]
+    [HttpPut("{commentId}")]
     [Authorize]
-    public async Task<IActionResult> Update(Guid id, UpdateCommentCommand command)
+    public async Task<IActionResult> Update(
+        [FromRoute(Name = "commentId")] Guid commentId,
+        [FromBody] UpdateCommentCommand command)
     {
-        if (id != command.Id)
-            return BadRequest("Id uyuşmuyor");
+        var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+
+        command.Id = commentId;
+        command.AuthorId = userId;
 
         var success = await _mediator.Send(command);
-        return success ? Ok(new { Message = "Yorum güncellendi" })
-                       : Forbid("Yorumu güncelleyemezsin");
+
+        return success
+            ? Ok(new { Message = "Yorum güncellendi" })
+            : Forbid("Yorumu güncelleyemezsin");
     }
+
+
 
     // ✅ Delete
-    [HttpDelete("{id}")]
+    [HttpDelete("{commentId}")]
     [Authorize]
-    public async Task<IActionResult> Delete(Guid id, [FromQuery] Guid authorId)
+    public async Task<IActionResult> Delete(
+        [FromRoute(Name = "commentId")] Guid commentId)
     {
-        var command = new DeleteCommentCommand { Id = id, AuthorId = authorId };
+        var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+
+        var command = new DeleteCommentCommand
+        {
+            Id = commentId,
+            AuthorId = userId
+        };
+
         var success = await _mediator.Send(command);
-        return success ? Ok(new { Message = "Yorum silindi" })
-                       : Forbid("Yorumu silemezsin");
+
+        return success
+            ? Ok(new { Message = "Yorum silindi" })
+            : Forbid("Yorumu silemezsin");
     }
+
+
 }
