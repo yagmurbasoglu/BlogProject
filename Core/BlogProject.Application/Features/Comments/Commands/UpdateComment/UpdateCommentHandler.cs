@@ -2,6 +2,7 @@
 using BlogProject.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using BlogProject.Application.Common.Exceptions;
 
 namespace BlogProject.Application.Features.Comments.Commands.UpdateComment
 {
@@ -22,18 +23,22 @@ namespace BlogProject.Application.Features.Comments.Commands.UpdateComment
             var comment = await repo.GetByIdAsync(request.Id, false, cancellationToken);
 
             if (comment == null || comment.IsDeleted)
-                return false;
+                throw new NotFoundException("Comment not found");
 
             // İstek yapan user
             var requester = await _userManager.FindByIdAsync(request.AuthorId.ToString());
-            if (requester == null) return false;
+            if (requester == null)
+                throw new UnauthorizedException("User not found or unauthorized");
 
             // Admin mi?
             var isAdmin = await _userManager.IsInRoleAsync(requester, "Admin");
 
             // Eğer yorumun sahibi değilse ve admin değilse → yetkisiz
             if (comment.AuthorId != request.AuthorId && !isAdmin)
-                return false;
+                throw new UnauthorizedException("You are not allowed to update this comment");
+
+            if (string.IsNullOrWhiteSpace(request.Content))
+                throw new AppValidationException("Comment content cannot be empty");
 
             comment.Content = request.Content;
             comment.CreatedAtUtc = DateTime.UtcNow;

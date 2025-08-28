@@ -1,4 +1,5 @@
-﻿using BlogProject.Domain.Entities;
+﻿using BlogProject.Application.Common.Exceptions;
+using BlogProject.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
@@ -16,7 +17,9 @@ public class PromoteToAdminHandler : IRequestHandler<PromoteToAdminCommand, bool
     public async Task<bool> Handle(PromoteToAdminCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-        if (user == null) return false;
+        if (user == null)
+            throw new NotFoundException("User not found");
+
 
         var result = await _userManager.AddToRoleAsync(user, "Admin");
         return result.Succeeded;

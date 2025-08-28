@@ -1,4 +1,5 @@
-﻿using BlogProject.Domain.Entities;
+﻿using BlogProject.Application.Common.Exceptions;
+using BlogProject.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
@@ -25,7 +26,7 @@ namespace BlogProject.Application.Features.Auth.Commands.Register
             var result = await _userManager.CreateAsync(user, request.Password);
 
             if (!result.Succeeded)
-                throw new Exception(string.Join(" | ", result.Errors.Select(e => e.Description)));
+                throw new AppValidationException(string.Join(" | ", result.Errors.Select(e => e.Description)));
 
 
             if (result.Succeeded)

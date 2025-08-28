@@ -1,4 +1,5 @@
-﻿using BlogProject.Application.Interfaces;
+﻿using BlogProject.Application.Common.Exceptions;
+using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
 
@@ -15,6 +16,14 @@ namespace BlogProject.Application.Features.Posts.Commands.CreatePost
 
         public async Task<Guid> Handle(CreatePostCommand request, CancellationToken cancellationToken)
         {
+
+            if (string.IsNullOrWhiteSpace(request.Title))
+                throw new AppValidationException("Post title cannot be empty");
+
+            if (string.IsNullOrWhiteSpace(request.Content))
+                throw new AppValidationException("Post content cannot be empty");
+
+
             var post = new Post
             {
                 Id = Guid.NewGuid(),

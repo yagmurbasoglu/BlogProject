@@ -1,4 +1,5 @@
-﻿using BlogProject.Application.Interfaces;
+﻿using BlogProject.Application.Common.Exceptions;
+using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,7 @@ public class LikePostHandler : IRequestHandler<LikePostCommand, bool>
             null, true, cancellationToken);
 
         if (exists != null)
-            return false; // zaten beğenmiş
+            throw new AppValidationException("You already liked this post"); // zaten beğenmiş
 
         var like = new PostLike
         {

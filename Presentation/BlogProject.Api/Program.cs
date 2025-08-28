@@ -10,11 +10,19 @@ using Microsoft.AspNetCore.Identity;
 using BlogProject.Domain.Entities;
 using BlogProject.Application.Common.Mapping;
 using Microsoft.Extensions.DependencyInjection;
+using BlogProject.Api.Middleware;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()
-    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<CreatePostValidator>());
+    .AddFluentValidation(fv =>
+    {
+        fv.ImplicitlyValidateChildProperties = true;
+    });
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // ✅ yeni
+
 
 // Controllers
 builder.Services.AddControllers();
@@ -116,6 +124,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
