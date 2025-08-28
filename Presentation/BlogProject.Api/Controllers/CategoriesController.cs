@@ -1,54 +1,51 @@
-﻿using BlogProject.Domain.Entities;
-using BlogProject.Application.Interfaces;
+﻿using BlogProject.Application.Features.Categories.Commands.CreateCategory;
+using BlogProject.Application.Features.Categories.Commands.UpdateCategory;
+using BlogProject.Application.Features.Categories.Commands.DeleteCategory;
 using BlogProject.Application.Features.Categories.Queries;
-using BlogProject.Application.Features.Categories.Commands.CreateCategory;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BlogProject.Api.Controllers
+namespace BlogProject.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class CategoriesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class CategoriesController : ControllerBase
+    private readonly IMediator _mediator;
+
+    public CategoriesController(IMediator mediator)
     {
-        private readonly IUnitOfWork _uow;
-
-        public CategoriesController(IUnitOfWork uow)
-        {
-            _uow = uow;
-        }
-
-        // ✅ GET ALL
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetAll(CancellationToken ct)
-        {
-            var categories = await _uow.Repository<Category>().ListAsync(ct: ct);
-
-            var result = categories.Select(c => new CategoryDto
-            {
-                Id = c.Id,
-                Name = c.Name
-            }).ToList();
-
-            return Ok(result);
-        }
-
-        // ✅ CREATE
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CategoryCreateDto dto, CancellationToken ct)
-        {
-            var category = new Category
-            {
-                Id = Guid.NewGuid(),
-                Name = dto.Name
-            };
-
-            await _uow.Repository<Category>().AddAsync(category, ct);
-            await _uow.SaveChangesAsync(ct);
-
-            return Ok(new CategoryDto { Id = category.Id, Name = category.Name });
-        }
+        _mediator = mediator;
     }
+
+    // ✅ GET ALL
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAll(CancellationToken ct)
+        => Ok(await _mediator.Send(new GetAllCategoriesQuery(), ct));
+
+    // ✅ CREATE
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CategoryCreateDto dto, CancellationToken ct)
+    {
+        var command = new CreateCategoryCommand { Name = dto.Name };
+        return Ok(await _mediator.Send(command, ct));
+    }
+
+    // ✅ UPDATE
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCategoryCommand command, CancellationToken ct)
+    {
+        command.Id = id;
+        return Ok(await _mediator.Send(command, ct));
+    }
+
+    // ✅ DELETE
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+        => Ok(await _mediator.Send(new DeleteCategoryCommand { Id = id }, ct));
 }
