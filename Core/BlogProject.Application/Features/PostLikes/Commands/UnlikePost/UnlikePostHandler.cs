@@ -1,21 +1,24 @@
-﻿using BlogProject.Application.Common.Exceptions;
+﻿using AutoMapper;
+using BlogProject.Application.Common.Exceptions;
+using BlogProject.Application.Features.PostLikes.Queries;
 using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace BlogProject.Application.Features.PostLikes.Commands.UnlikePost;
 
-public class UnlikePostHandler : IRequestHandler<UnlikePostCommand, bool>
+public class UnlikePostHandler : IRequestHandler<UnlikePostCommand, PostLikeDto>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
 
-    public UnlikePostHandler(IUnitOfWork uow)
+    public UnlikePostHandler(IUnitOfWork uow, IMapper mapper)
     {
         _uow = uow;
+        _mapper = mapper;
     }
 
-    public async Task<bool> Handle(UnlikePostCommand request, CancellationToken cancellationToken)
+    public async Task<PostLikeDto> Handle(UnlikePostCommand request, CancellationToken cancellationToken)
     {
         var repo = _uow.Repository<PostLike>();
 
@@ -24,11 +27,11 @@ public class UnlikePostHandler : IRequestHandler<UnlikePostCommand, bool>
             null, false, cancellationToken);
 
         if (like == null)
-            throw new NotFoundException("Like not found for this user and post"); // zaten beğenmemiş
+            throw new NotFoundException("Like not found for this user and post");
 
         repo.Remove(like);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return true;
+        return _mapper.Map<PostLikeDto>(like);
     }
 }

@@ -1,31 +1,33 @@
-﻿using BlogProject.Application.Common.Exceptions;
+﻿using AutoMapper;
+using BlogProject.Application.Common.Exceptions;
+using BlogProject.Application.Features.PostLikes.Queries;
 using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace BlogProject.Application.Features.PostLikes.Commands.LikePost;
 
-public class LikePostHandler : IRequestHandler<LikePostCommand, bool>
+public class LikePostHandler : IRequestHandler<LikePostCommand, PostLikeDto>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
 
-    public LikePostHandler(IUnitOfWork uow)
+    public LikePostHandler(IUnitOfWork uow, IMapper mapper)
     {
         _uow = uow;
+        _mapper = mapper;
     }
 
-    public async Task<bool> Handle(LikePostCommand request, CancellationToken cancellationToken)
+    public async Task<PostLikeDto> Handle(LikePostCommand request, CancellationToken cancellationToken)
     {
         var repo = _uow.Repository<PostLike>();
 
-        // aynı user + post için zaten like var mı kontrol et
         var exists = await repo.FirstOrDefaultAsync(
             l => l.PostId == request.PostId && l.UserId == request.UserId,
             null, true, cancellationToken);
 
         if (exists != null)
-            throw new AppValidationException("You already liked this post"); // zaten beğenmiş
+            throw new AppValidationException("You already liked this post");
 
         var like = new PostLike
         {
@@ -36,6 +38,6 @@ public class LikePostHandler : IRequestHandler<LikePostCommand, bool>
         await repo.AddAsync(like, cancellationToken);
         await _uow.SaveChangesAsync(cancellationToken);
 
-        return true;
+        return _mapper.Map<PostLikeDto>(like);
     }
 }

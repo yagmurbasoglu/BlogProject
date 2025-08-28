@@ -1,14 +1,18 @@
 ﻿using BlogProject.Application.Features.PostLikes.Commands.LikePost;
 using BlogProject.Application.Features.PostLikes.Commands.UnlikePost;
 using BlogProject.Application.Features.PostLikes.Queries.GetPostLikes;
+using BlogProject.Application.Features.PostLikes.Queries.IsPostLiked;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
+using System.Security.Claims;
 
 namespace BlogProject.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PostLikesController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -18,50 +22,47 @@ public class PostLikesController : ControllerBase
         _mediator = mediator;
     }
 
-    // ✅ Post beğen
-    [HttpPost("{postId}/like")]
-    [Authorize]
-    public async Task<IActionResult> Like([FromRoute(Name = "postId")] Guid postId)
+    [HttpPost("like")]
+    [SwaggerOperation(
+        Summary = "Bir gönderiyi beğen",
+        Description = "Kullanıcı JWT’den alınan kimliğiyle belirttiği gönderiyi (PostId) beğenir."
+    )]
+    public async Task<IActionResult> Like([FromBody] LikePostCommand command, CancellationToken ct)
     {
-        var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-
-
-        var success = await _mediator.Send(new LikePostCommand
-        {
-            PostId = postId,
-            UserId = userId
-        });
-
-        return success
-            ? Ok(new { Message = "Post beğenildi" })
-            : BadRequest(new { Message = "Zaten beğenmişsiniz" });
+        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        command.UserId = userId; // JWT’den doldur
+        return Ok(await _mediator.Send(command, ct));
     }
 
-    // ✅ Post beğenisini kaldır
-    [HttpDelete("{postId}/unlike")]
-    [Authorize]
-    public async Task<IActionResult> Unlike([FromRoute(Name = "postId")] Guid postId)
+    [HttpPost("unlike")]
+    [SwaggerOperation(
+        Summary = "Bir gönderinin beğenisini kaldır",
+        Description = "Kullanıcı JWT’den alınan kimliğiyle daha önce beğendiği gönderinin beğenisini kaldırır."
+    )]
+    public async Task<IActionResult> Unlike([FromBody] UnlikePostCommand command, CancellationToken ct)
     {
-        var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-
-
-        var success = await _mediator.Send(new UnlikePostCommand
-        {
-            PostId = postId,
-            UserId = userId
-        });
-
-        return success
-            ? Ok(new { Message = "Beğeni kaldırıldı" })
-            : BadRequest(new { Message = "Beğeni bulunamadı" });
+        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        command.UserId = userId; // JWT’den doldur
+        return Ok(await _mediator.Send(command, ct));
     }
 
-    // ✅ Postun toplam beğeni sayısını getir
-    [HttpGet("{postId}/count")]
+    [HttpGet("{postId}/isLiked")]
+    [SwaggerOperation(
+        Summary = "Kullanıcı bu gönderiyi beğendi mi?",
+        Description = "JWT’den alınan kullanıcı Id’si ile verilen PostId kontrol edilir. True/False döner."
+    )]
+    public async Task<IActionResult> IsLiked(Guid postId, CancellationToken ct)
+    {
+        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        return Ok(await _mediator.Send(new IsPostLikedQuery { PostId = postId, UserId = userId }, ct));
+    }
+
+    [HttpGet("{postId}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetLikesCount([FromRoute(Name = "postId")] Guid postId)
-    {
-        var count = await _mediator.Send(new GetPostLikesQuery { PostId = postId });
-        return Ok(new { PostId = postId, Likes = count });
-    }
+    [SwaggerOperation(
+        Summary = "Bir gönderinin tüm beğenilerini listele",
+        Description = "Verilen PostId için tüm kullanıcıların beğeni kayıtlarını döner."
+    )]
+    public async Task<IActionResult> GetLikes(Guid postId, CancellationToken ct)
+        => Ok(await _mediator.Send(new GetPostLikesQuery { PostId = postId }, ct));
 }
