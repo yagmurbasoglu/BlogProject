@@ -1,4 +1,5 @@
-﻿using BlogProject.Application.Interfaces;
+﻿using BlogProject.Application.Common.Exceptions;
+using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +24,7 @@ public class UnlikePostHandler : IRequestHandler<UnlikePostCommand, bool>
             null, false, cancellationToken);
 
         if (like == null)
-            return false; // zaten beğenmemiş
+            throw new NotFoundException("Like not found for this user and post"); // zaten beğenmemiş
 
         repo.Remove(like);
         await _uow.SaveChangesAsync(cancellationToken);

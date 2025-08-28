@@ -1,4 +1,5 @@
-﻿using BlogProject.Application.Interfaces;
+﻿using BlogProject.Application.Common.Exceptions;
+using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
 
@@ -19,7 +20,7 @@ public class GetPostByIdQueryHandler : IRequestHandler<GetPostByIdQuery, Post?>
         var post = await repo.GetByIdAsync(request.Id, false, cancellationToken);
 
         if (post == null || post.IsDeleted)
-            return null;
+            throw new NotFoundException("Post not found");
 
         // ✅ ViewCount artır
         post.ViewCount++;

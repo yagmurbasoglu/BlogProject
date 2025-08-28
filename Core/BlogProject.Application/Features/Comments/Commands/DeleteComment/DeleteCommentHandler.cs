@@ -1,45 +1,44 @@
-﻿using BlogProject.Application.Interfaces;
+﻿using BlogProject.Application.Common.Exceptions;
+using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace BlogProject.Application.Features.Comments.Commands.DeleteComment
+namespace BlogProject.Application.Features.Comments.Commands.DeleteComment;
+
+public class DeleteCommentHandler : IRequestHandler<DeleteCommentCommand, bool>
 {
-    public class DeleteCommentHandler : IRequestHandler<DeleteCommentCommand, bool>
+    private readonly IUnitOfWork _uow;
+    private readonly UserManager<ApplicationUser> _userManager;
+
+    public DeleteCommentHandler(IUnitOfWork uow, UserManager<ApplicationUser> userManager)
     {
-        private readonly IUnitOfWork _uow;
-        private readonly UserManager<ApplicationUser> _userManager;
+        _uow = uow;
+        _userManager = userManager;
+    }
 
-        public DeleteCommentHandler(IUnitOfWork uow, UserManager<ApplicationUser> userManager)
-        {
-            _uow = uow;
-            _userManager = userManager;
-        }
+    public async Task<bool> Handle(DeleteCommentCommand request, CancellationToken cancellationToken)
+    {
+        var repo = _uow.Repository<Comment>();
+        var comment = await repo.GetByIdAsync(request.Id, false, cancellationToken);
 
-        public async Task<bool> Handle(DeleteCommentCommand request, CancellationToken cancellationToken)
-        {
-            var repo = _uow.Repository<Comment>();
-            var comment = await repo.GetByIdAsync(request.Id, false, cancellationToken);
+        if (comment == null || comment.IsDeleted)
+            throw new NotFoundException("Comment not found");
 
-            if (comment == null || comment.IsDeleted)
-                return false;
+        var requester = await _userManager.FindByIdAsync(request.AuthorId.ToString());
+        if (requester == null)
+            throw new UnauthorizedException("User not found or unauthorized");
 
-            // İstek yapan user
-            var requester = await _userManager.FindByIdAsync(request.AuthorId.ToString());
-            if (requester == null) return false;
+        var isAdmin = await _userManager.IsInRoleAsync(requester, "Admin");
 
-            // Admin mi?
-            var isAdmin = await _userManager.IsInRoleAsync(requester, "Admin");
+        if (comment.AuthorId != request.AuthorId && !isAdmin)
+            throw new UnauthorizedException("You are not allowed to delete this comment");
 
-            // Eğer yorumun sahibi değilse ve admin değilse → yetkisiz
-            if (comment.AuthorId != request.AuthorId && !isAdmin)
-                return false;
+        comment.IsDeleted = true;
 
-            comment.IsDeleted = true;
+        repo.Update(comment);
+        await _uow.SaveChangesAsync(cancellationToken);
 
-            repo.Update(comment);
-            await _uow.SaveChangesAsync(cancellationToken);
-            return true;
-        }
+        return true;
     }
 }

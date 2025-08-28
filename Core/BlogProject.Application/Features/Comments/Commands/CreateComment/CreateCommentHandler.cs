@@ -2,6 +2,7 @@
 using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
+using BlogProject.Application.Common.Exceptions;
 
 namespace BlogProject.Application.Features.Comments.Commands.CreateComment;
 
@@ -18,6 +19,10 @@ public class CreateCommentHandler : IRequestHandler<CreateCommentCommand, Guid>
 
     public async Task<Guid> Handle(CreateCommentCommand request, CancellationToken cancellationToken)
     {
+
+        if (string.IsNullOrWhiteSpace(request.Content))
+            throw new AppValidationException("Comment content cannot be empty");
+
         // Request → Entity mapping
         var comment = _mapper.Map<Comment>(request);
         comment.CreatedAtUtc = DateTime.UtcNow;

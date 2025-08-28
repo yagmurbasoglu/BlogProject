@@ -1,4 +1,5 @@
-﻿using BlogProject.Application.Interfaces;
+﻿using BlogProject.Application.Common.Exceptions;
+using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -21,18 +22,20 @@ namespace BlogProject.Application.Features.Posts.Commands.DeletePost
             var repo = _uow.Repository<Post>();
             var post = await repo.FirstOrDefaultAsync(x => x.Id == request.Id && !x.IsDeleted);
 
-            if (post == null) return false;
+            if (post == null)
+                throw new NotFoundException("Post not found");
 
             // istek yapan kullanıcı
             var requester = await _userManager.FindByIdAsync(request.UserId.ToString());
-            if (requester == null) return false;
+            if (requester == null)
+                throw new UnauthorizedException("User not found or unauthorized");
 
             // admin mi kontrol et
             var isAdmin = await _userManager.IsInRoleAsync(requester, "Admin");
 
             // eğer postun sahibi değilse ve admin değilse → yetkisiz
             if (post.AuthorId != request.UserId && !isAdmin)
-                return false;
+                throw new UnauthorizedException("You are not allowed to delete this post");
 
             // soft delete
             post.IsDeleted = true;

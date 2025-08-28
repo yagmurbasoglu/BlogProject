@@ -1,4 +1,5 @@
-﻿using BlogProject.Domain.Entities;
+﻿using BlogProject.Application.Common.Exceptions;
+using BlogProject.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -25,7 +26,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, string>
         var user = await _userManager.FindByEmailAsync(request.Email);
 
         if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
-            throw new UnauthorizedAccessException("Invalid credentials");
+            throw new UnauthorizedException("Invalid credentials");
 
         var claims = new List<Claim>
         {
