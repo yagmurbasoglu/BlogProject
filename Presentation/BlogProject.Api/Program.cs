@@ -8,6 +8,8 @@ using FluentValidation.AspNetCore;
 using BlogProject.Application.Features.Posts.Commands.CreatePost;
 using Microsoft.AspNetCore.Identity;
 using BlogProject.Domain.Entities;
+using BlogProject.Application.Common.Mapping;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,10 @@ builder.Services.AddControllers()
 
 // Controllers
 builder.Services.AddControllers();
+
+//AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
 
 // Application katmanı servislerini ekle
 builder.Services.AddApplication();
