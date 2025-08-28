@@ -1,9 +1,16 @@
-﻿using MediatR;
+﻿using BlogProject.Application.Features.PostLikes.Queries;
+using MediatR;
+using Swashbuckle.AspNetCore.Annotations;
+using System.Text.Json.Serialization;
 
 namespace BlogProject.Application.Features.PostLikes.Commands.UnlikePost;
 
-public class UnlikePostCommand : IRequest<bool>
+public class UnlikePostCommand : IRequest<PostLikeDto>
 {
+    [SwaggerSchema("Beğeniyi kaldırmak istediğiniz postun Id'si")]
     public Guid PostId { get; set; }
-    public Guid UserId { get; set; } // JWT’den gelecek
+
+    [SwaggerSchema("Beğeniyi kaldıran kullanıcının Id'si (JWT'den gelecek)")]
+    [JsonIgnore] // Body’de gözükmesin
+    public Guid UserId { get; set; }
 }
