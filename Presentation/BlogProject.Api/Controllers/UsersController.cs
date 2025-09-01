@@ -1,4 +1,5 @@
 ﻿using BlogProject.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,6 +35,7 @@ namespace BlogProject.Api.Controllers
 
         // GET api/users/admins
         [HttpGet("admins")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetAdmins()
         {
             var users = _userManager.Users.ToList();
@@ -55,6 +57,27 @@ namespace BlogProject.Api.Controllers
             }
 
             return Ok(admins);
+        }
+
+        // ✅ Admin sil (SuperAdmin → Admin rolünü kaldırır)
+        [HttpDelete("remove-admin/{id}")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> RemoveAdmin(Guid id)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user == null)
+                return NotFound(new { Message = "Kullanıcı bulunamadı." });
+
+            var roles = await _userManager.GetRolesAsync(user);
+            if (!roles.Contains("Admin"))
+                return BadRequest(new { Message = "Bu kullanıcı zaten Admin değil." });
+
+            var result = await _userManager.RemoveFromRoleAsync(user, "Admin");
+
+            if (!result.Succeeded)
+                return BadRequest(new { Message = "Admin rolü kaldırılamadı." });
+
+            return Ok(new { Message = "Kullanıcı Admin rolünden çıkarıldı." });
         }
 
     }

@@ -12,6 +12,7 @@ using BlogProject.Application.Common.Mapping;
 using Microsoft.Extensions.DependencyInjection;
 using BlogProject.Api.Middleware;
 using FluentValidation;
+using BlogProject.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -101,21 +102,19 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 
-// ✅ Rolleri seed et (Admin ve User)
+// ✅ Rolleri ve SuperAdmin’i seed et
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+    var services = scope.ServiceProvider;
 
-    string[] roleNames = { "Admin", "User" };
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var config = services.GetRequiredService<IConfiguration>();
 
-    foreach (var roleName in roleNames)
-    {
-        if (!await roleManager.RoleExistsAsync(roleName))
-        {
-            await roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
-        }
-    }
+    // SuperAdmin kullanıcı seed
+    await AppDbContextSeed.SeedSuperAdminAsync(userManager, roleManager,config);
 }
+
 
 // Middleware pipeline
 if (app.Environment.IsDevelopment())
