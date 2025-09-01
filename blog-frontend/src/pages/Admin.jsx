@@ -21,7 +21,7 @@ export default function Admin() {
   const [promoteSaving, setPromoteSaving] = useState(false);
   const [admins, setAdmins] = useState([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
-  const SHOW_ADMIN_LIST = false;
+  const SHOW_ADMIN_LIST = true;
 
   const getCurrentRoleFromToken = () => {
     try {
@@ -42,52 +42,19 @@ export default function Admin() {
 
   const isAdmin = useMemo(() => getCurrentRoleFromToken().some(r => /admin/i.test(r)), []);
 
-  const loadAdmins = async () => {
-    try {
-      setAdminsLoading(true);
-      // kept for future use; currently not called because SHOW_ADMIN_LIST=false
-      const tryEndpoints = [
-        "/Auth/admins",
-        "/Auth/GetAdmins",
-        "/Auth/get-admins",
-        "/Auth/admin-users",
-        "/auth/admins",
-        "/auth/get-admins",
-        "/Users/admins",
-        "/users/admins",
-        "/Auth/users",
-        "/Users",
-        "/users",
-        "/users?role=admin",
-      ];
-      let data = [];
-      for (const ep of tryEndpoints) {
-        try {
-          const res = await api.get(ep);
-          if (res?.data) { data = res.data; break; }
-        } catch {
-        }
-      }
-      const arr = Array.isArray(data) ? data : [];
-      const filtered = arr.filter((u) => {
-        const roles = (u.userRoles || u.UserRoles || u.roles || u.role || []);
-        let list = [];
-        if (Array.isArray(roles)) list = roles;
-        else if (typeof roles === "string") list = roles.split(/[;,\s]+/g);
-        else if (typeof roles === "object" && roles) list = Object.values(roles);
-        return list.map((r)=>String(r).toLowerCase()).includes("admin");
-      });
-      const normalized = (filtered || []).map(u => ({
-        id: u.id || u.userId || u.Id || u.UserId || u.guid || "",
-        username: u.userName || u.username || u.name || u.fullName || u.email || u.Email || "",
-        email: u.email || u.Email || "",
-        avatar: u.profileImage || u.profilePicture || u.avatar || null,
-      }));
-      setAdmins(normalized);
-    } finally {
-      setAdminsLoading(false);
-    }
-  };
+const loadAdmins = async () => {
+  try {
+    setAdminsLoading(true);
+    const res = await api.get("/users/admins");
+    setAdmins(res.data || []);
+  } catch (err) {
+    console.error("Adminleri yükleme hatası:", err.response?.status, err.response?.data);
+    setAdmins([]);
+  } finally {
+    setAdminsLoading(false);
+  }
+};
+
 
   useEffect(() => {
     if (!isAdmin) {
@@ -308,6 +275,42 @@ export default function Admin() {
             <button style={{...styles.primaryBtn, ...(promoteSaving ? styles.buttonDisabled : {})}} disabled={promoteSaving} onClick={promoteToAdmin}>Admin Yap</button>
           </div>
         </section>
+{SHOW_ADMIN_LIST && (
+  <section style={styles.blockCard}>
+    <div style={styles.blockHeader}>
+      <h3 style={{ margin: 0 }}>Mevcut Adminler</h3>
+    </div>
+    {adminsLoading ? (
+      <div style={styles.emptyBox}>Adminler yükleniyor...</div>
+    ) : admins.length === 0 ? (
+      <div style={styles.emptyBox}>Henüz admin bulunmuyor.</div>
+    ) : (
+      <div style={styles.adminGrid}>
+        {admins.map((a) => (
+          <div key={a.id} style={styles.adminCard}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {a.avatar ? (
+                <img src={a.avatar} alt={a.username} style={styles.adminAvatarImg} />
+              ) : (
+                <div style={styles.adminAvatar}>
+  {a.username
+    ? a.username.charAt(0).toUpperCase()
+    : (a.email ? a.email.charAt(0).toUpperCase() : "•")}
+</div>
+
+              )}
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <strong>{a.username}</strong>
+                <span style={{ fontSize: 12, opacity: 0.8 }}>{a.email}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </section>
+)}
+
       </div>
     </div>
   );
@@ -318,7 +321,7 @@ const styles = {
     minHeight: "100vh",
     padding: 24,
     background:
-      "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.18), rgba(0,0,0,0)), radial-gradient(1000px 500px at 110% 110%, rgba(100,108,255,0.18), rgba(0,0,0,0))",
+      "radial-gradient(1000px 500px at 10% -10%, rgba(242, 100, 255, 0.18), rgba(61, 51, 51, 0)), radial-gradient(1000px 500px at 110% 110%, rgba(242, 100, 255, 0.18), rgba(0,0,0,0))",
   },
   container: { maxWidth: 1100, margin: "0 auto" },
   centerWrap: { minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" },

@@ -151,39 +151,31 @@ export default function Posts() {
     }
   };
 
-  const fetchAuthors = async (posts) => {
-    try {
-      const map = {};
-      (posts || []).forEach((p) => {
-        const key = p && p.authorId != null ? String(p.authorId) : "";
+const fetchAuthors = async (posts) => {
+  try {
+    const map = {};
+    await Promise.all(
+      (posts || []).map(async (p) => {
+        const key = p && p.authorId ? String(p.authorId) : "";
         if (!key) return;
-        const authorObj = p.author || {};
-        const username = (
-          p.authorName ||
-          p.authorUsername ||
-          authorObj.userName ||
-          authorObj.username ||
-          authorObj.name ||
-          null
-        );
-        const profileImage = (
-          p.authorImage ||
-          p.authorAvatar ||
-          authorObj.profileImage ||
-          authorObj.profilePicture ||
-          authorObj.avatar ||
-          null
-        );
-        map[key] = {
-          username: username || "Bilinmeyen Kullanıcı",
-          profileImage: profileImage || null,
-        };
-      });
-      setAuthors(map);
-    } catch (_) {
-      // ignore
-    }
-  };
+
+        try {
+          const res = await api.get(`/users/${key}`);
+          const user = res.data;
+
+          map[key] = {
+            username: user.displayName || user.userName || "Bilinmeyen Kullanıcı",
+            profileImage: user.profileImage || null,
+          };
+        } catch {
+          map[key] = { username: "Bilinmeyen Kullanıcı", profileImage: null };
+        }
+      })
+    );
+    setAuthors(map);
+  } catch (_) {}
+};
+
 
   const findDateField = (post) => {
     // Prefer backend field names first
@@ -205,26 +197,35 @@ export default function Posts() {
     return null;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "";
-      
-      const now = new Date();
-      const diffTime = Math.abs(now - date);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 0) return "Bugün";
-      if (diffDays === 1) return "Dün";
-      if (diffDays < 7) return `${diffDays} gün önce`;
-      if (diffDays < 30) return `${Math.floor(diffDays / 7)} hafta önce`;
-      if (diffDays < 365) return `${Math.floor(diffDays / 30)} ay önce`;
-      return date.toLocaleDateString("tr-TR");
-    } catch {
-      return "";
-    }
-  };
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  try {
+    let date = new Date(dateString);
+
+    // UTC → Local düzeltme (Türkiye için +3 saat)
+    date = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMinutes < 1) return "Az önce";
+    if (diffHours < 1) return `${diffMinutes} dakika önce`;
+    if (diffHours < 24) return `${diffHours} saat önce`;
+    if (diffDays === 1) return "Dün";
+    if (diffDays < 7) return `${diffDays} gün önce`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} hafta önce`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} ay önce`;
+
+    return date.toLocaleDateString("tr-TR");
+  } catch {
+    return "";
+  }
+};
+
+
 
   const truncateContent = (content, maxLength = 150) => {
     if (!content || content.length <= maxLength) return content;
@@ -261,10 +262,11 @@ export default function Posts() {
         break;
       case "date":
       default:
-        // Sort by creation date (newest first)
-        if (filtered[0]?.createdAt) {
-          filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        }
+filtered.sort((a, b) => {
+    const aDate = new Date(findDateField(a) || 0);
+    const bDate = new Date(findDateField(b) || 0);
+    return bDate - aDate; // yeni → eski
+  });
         break;
     }
     
