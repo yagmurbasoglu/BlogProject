@@ -56,7 +56,7 @@ export default function Login() {
       localStorage.setItem("token", String(extracted));
 
       const { isAdmin } = getRolesFromToken(extracted);
-      navigate(isAdmin ? "/admin" : "/posts");
+      navigate("/posts");
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Login error:", {

@@ -33,7 +33,7 @@ namespace BlogProject.Api.Controllers
         }
 
         [HttpPost("promote-to-admin/{userId}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> PromoteToAdmin(Guid userId)
         {
             var success = await _mediator.Send(new PromoteToAdminCommand { UserId = userId });

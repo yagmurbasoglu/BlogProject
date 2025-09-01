@@ -156,21 +156,41 @@ const loadAdmins = async () => {
     }
   };
 
-  const promoteToAdmin = async () => {
-    if (!promoteUserId.trim()) return;
-    try {
-      setPromoteSaving(true);
-      await api.post(`/Auth/promote-to-admin/${promoteUserId.trim()}`);
-      alert("Kullanıcı admin yapıldı.");
-      setPromoteUserId("");
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Promote admin error", err.response?.status, err.response?.data);
-      alert("Kullanıcı admin yapılamadı.");
-    } finally {
-      setPromoteSaving(false);
-    }
-  };
+// --- ekle ---
+const isSuperAdmin = useMemo(() => 
+  getCurrentRoleFromToken().some(r => r.toLowerCase() === "superadmin"), []
+);
+
+// --- promoteToAdmin fonksiyonunu güncelle ---
+const promoteToAdmin = async () => {
+  if (!promoteUserId.trim()) return;
+  try {
+    setPromoteSaving(true);
+    await api.post(`/Auth/promote-to-admin/${promoteUserId.trim()}`);
+    alert("✅ Kullanıcı admin yapıldı.\nRolün aktif olabilmesi için tekrar giriş yapılmalıdır.");
+    setPromoteUserId("");
+    await loadAdmins(); // listeyi yenile
+  } catch (err) {
+    console.error("Promote admin error", err.response?.status, err.response?.data);
+    alert("❌ Kullanıcı admin yapılamadı.");
+  } finally {
+    setPromoteSaving(false);
+  }
+};
+
+// --- yeni fonksiyon: admin silme ---
+const removeAdmin = async (id) => {
+  if (!confirm("Bu kullanıcının adminliğini kaldırmak istediğinize emin misiniz?")) return;
+  try {
+    await api.delete(`/users/remove-admin/${id}`);
+    alert("✅ Admin rolü kaldırıldı.");
+    setAdmins(prev => prev.filter(a => a.id !== id));
+  } catch (err) {
+    console.error("Remove admin error", err.response?.status, err.response?.data);
+    alert("❌ Admin rolü kaldırılamadı.");
+  }
+};
+
 
   const logout = () => { localStorage.removeItem("token"); navigate("/login"); };
 
@@ -266,16 +286,21 @@ const loadAdmins = async () => {
           )}
         </section>
 
-        <section style={styles.blockCard}>
-          <div style={styles.blockHeader}>
-            <h3 style={{ margin: 0 }}>Yeni Admin Ekle</h3>
-          </div>
-          <div style={styles.toolbar}>
-            <input style={styles.input} placeholder="Kullanıcı ID (GUID)" value={promoteUserId} onChange={(e)=>setPromoteUserId(e.target.value)} />
-            <button style={{...styles.primaryBtn, ...(promoteSaving ? styles.buttonDisabled : {})}} disabled={promoteSaving} onClick={promoteToAdmin}>Admin Yap</button>
-          </div>
-        </section>
-{SHOW_ADMIN_LIST && (
+        {/* ✅ Yeni Admin Ekle (sadece SuperAdmin görsün) */}
+{isSuperAdmin && (
+  <section style={styles.blockCard}>
+    <div style={styles.blockHeader}>
+      <h3 style={{ margin: 0 }}>Yeni Admin Ekle</h3>
+    </div>
+    <div style={styles.toolbar}>
+      <input style={styles.input} placeholder="Kullanıcı ID (GUID)" value={promoteUserId} onChange={(e)=>setPromoteUserId(e.target.value)} />
+      <button style={{...styles.primaryBtn, ...(promoteSaving ? styles.buttonDisabled : {})}} disabled={promoteSaving} onClick={promoteToAdmin}>Admin Yap</button>
+    </div>
+  </section>
+)}
+
+{/* ✅ Mevcut Adminler (sadece SuperAdmin görsün) */}
+{isSuperAdmin && SHOW_ADMIN_LIST && (
   <section style={styles.blockCard}>
     <div style={styles.blockHeader}>
       <h3 style={{ margin: 0 }}>Mevcut Adminler</h3>
@@ -288,21 +313,28 @@ const loadAdmins = async () => {
       <div style={styles.adminGrid}>
         {admins.map((a) => (
           <div key={a.id} style={styles.adminCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {a.avatar ? (
-                <img src={a.avatar} alt={a.username} style={styles.adminAvatarImg} />
-              ) : (
-                <div style={styles.adminAvatar}>
-  {a.username
-    ? a.username.charAt(0).toUpperCase()
-    : (a.email ? a.email.charAt(0).toUpperCase() : "•")}
-</div>
-
-              )}
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <strong>{a.username}</strong>
-                <span style={{ fontSize: 12, opacity: 0.8 }}>{a.email}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {a.avatar ? (
+                  <img src={a.avatar} alt={a.username} style={styles.adminAvatarImg} />
+                ) : (
+                  <div style={styles.adminAvatar}>
+                    {a.username
+                      ? a.username.charAt(0).toUpperCase()
+                      : (a.email ? a.email.charAt(0).toUpperCase() : "•")}
+                  </div>
+                )}
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <strong>{a.username}</strong>
+                  <span style={{ fontSize: 12, opacity: 0.8 }}>{a.email}</span>
+                </div>
               </div>
+              <button 
+                style={{...styles.ghostBtn, color: "#ff6b6b", borderColor: "rgba(255,77,79,0.45)"}} 
+                onClick={() => removeAdmin(a.id)}
+              >
+                Adminliği Kaldır
+              </button>
             </div>
           </div>
         ))}
