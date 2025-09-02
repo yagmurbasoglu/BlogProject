@@ -38,6 +38,12 @@ export default function Posts() {
   const [editingCommentText, setEditingCommentText] = useState("");
   const [editingCommentSaving, setEditingCommentSaving] = useState(false);
   const [sortBy, setSortBy] = useState("date");
+  const [pageNumber, setPageNumber] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+
+
+
   const handleLogout = () => { localStorage.removeItem("token"); navigate("/login"); };
 
   // Helpers
@@ -279,10 +285,13 @@ filtered.sort((a, b) => {
         setLoading(true);
         setError("");
         const [postsRes, catsRes] = await Promise.all([
-          api.get("/posts"),
+          api.get(`/posts/paged?pageNumber=${pageNumber}&pageSize=6`),
           api.get("/categories"),
         ]);
-        const basePosts = postsRes.data || [];
+        const basePosts = postsRes.data.items || [];
+        setTotalPages(postsRes.data.totalPages);
+        setPageNumber(postsRes.data.pageNumber);
+
         setCategories(catsRes.data || []);
         const decodedId = getCurrentUserIdFromToken();
         if (decodedId) setCurrentUserId(String(decodedId));
@@ -303,7 +312,7 @@ filtered.sort((a, b) => {
       }
     };
     load();
-  }, []);
+  }, [pageNumber]);
 
   const openCreate = () => {
     const token = localStorage.getItem("token");
@@ -631,7 +640,7 @@ filtered.sort((a, b) => {
             {filteredPosts.map((post) => {
               const isOwner = currentUserId && String(post.authorId) === String(currentUserId);
               const likeCount = post.likeCount ?? 0;
-const userLiked = Boolean(post.likedByCurrentUser);
+              const userLiked = Boolean(post.likedByCurrentUser);
 
               return (
               <article 
@@ -757,6 +766,40 @@ const userLiked = Boolean(post.likedByCurrentUser);
           </div>
         )}
       </div>
+
+      {filteredPosts.length === 0 ? (
+  <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
+) : (
+  <div style={styles.grid}>
+    {filteredPosts.map((post) => {
+      // ... kart renderı
+    })}
+  </div>
+)}
+
+{totalPages > 1 && (
+  <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 12 }}>
+    <button
+      style={styles.ghostBtn}
+      disabled={pageNumber === 1}
+      onClick={() => setPageNumber(pageNumber - 1)}
+    >
+      ← Önceki
+    </button>
+
+    <span style={{ alignSelf: "center" }}>
+      {pageNumber} / {totalPages}
+    </span>
+
+    <button
+      style={styles.ghostBtn}
+      disabled={pageNumber === totalPages}
+      onClick={() => setPageNumber(pageNumber + 1)}
+    >
+      Sonraki →
+    </button>
+  </div>
+)}
 
       {formOpen && (
         <div style={styles.modalOverlay} onClick={closeForm}>

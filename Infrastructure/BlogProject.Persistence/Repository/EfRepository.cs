@@ -61,4 +61,12 @@ public class EfRepository<T> : IRepository<T> where T : class
             _set.Remove(entity);
         }
     }
+
+    // 🔹 Burayı ekliyoruz
+    public IQueryable<T> Query()
+    {
+        return _set.AsQueryable();
+    }
+
+
 }

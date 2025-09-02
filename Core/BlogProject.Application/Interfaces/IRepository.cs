@@ -31,5 +31,8 @@ namespace BlogProject.Application.Interfaces
         void Remove(T entity);
 
         void SoftDelete(T entity);
+
+        // 🔹 Pagination ve filtreleme için IQueryable
+        IQueryable<T> Query();
     }
 }
