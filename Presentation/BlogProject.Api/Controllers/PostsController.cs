@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using BlogProject.Application.Features.Posts.Queries;
 
 namespace BlogProject.Api.Controllers
 {
@@ -80,5 +81,14 @@ namespace BlogProject.Api.Controllers
             if (!success) return Forbid();
             return NoContent();
         }
+
+        [HttpGet("paged")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var result = await _mediator.Send(new GetPostsWithPaginationQuery { PageNumber = pageNumber, PageSize = pageSize });
+            return Ok(result);
+        }
+
     }
 }

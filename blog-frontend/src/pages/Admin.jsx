@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useSearchParams } from "react-router-dom";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -22,6 +22,13 @@ export default function Admin() {
   const [admins, setAdmins] = useState([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
   const SHOW_ADMIN_LIST = true;
+const [searchParams, setSearchParams] = useSearchParams();
+const initialAdminPage = parseInt(searchParams.get("page") || "1", 10);
+const [adminPageNumber, setAdminPageNumber] = useState(initialAdminPage);
+
+  const [adminTotalPages, setAdminTotalPages] = useState(1);
+const [adminSortBy, setAdminSortBy] = useState("date");
+
 
   const getCurrentRoleFromToken = () => {
     try {
@@ -39,6 +46,43 @@ export default function Admin() {
       return [];
     }
   };
+
+  // ⬆ useState importlarının altına ekle
+// like ve comment sayıları için yardımcı fonksiyonlar
+const fetchLikeInfo = async (postId) => {
+  try {
+    const res = await api.get(`/PostLikes/${postId}`);
+    if (Array.isArray(res.data)) return res.data.length;
+    if (Array.isArray(res.data?.items)) return res.data.items.length;
+    if (typeof res.data?.count === "number") return res.data.count;
+    return 0;
+  } catch {
+    return 0;
+  }
+};
+
+const fetchCommentCount = async (postId) => {
+  try {
+    const res = await api.get(`/Comments/${postId}`);
+    if (Array.isArray(res.data)) return res.data.length;
+    if (Array.isArray(res.data?.items)) return res.data.items.length;
+    if (typeof res.data?.count === "number") return res.data.count;
+    return 0;
+  } catch {
+    return 0;
+  }
+};
+
+const enrichAdminPosts = async (rawPosts) => {
+  return Promise.all(
+    (rawPosts || []).map(async (p) => {
+      const likeCount = await fetchLikeInfo(p.id);
+      const commentCount = await fetchCommentCount(p.id);
+      return { ...p, likeCount, commentCount };
+    })
+  );
+};
+
 
   const isAdmin = useMemo(() => getCurrentRoleFromToken().some(r => /admin/i.test(r)), []);
 
@@ -86,10 +130,49 @@ const loadAdmins = async () => {
     load();
   }, [isAdmin, navigate]);
 
-  const filteredPosts = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return (posts || []).filter(p => term ? (p.title?.toLowerCase().includes(term) || p.content?.toLowerCase().includes(term)) : true);
-  }, [posts, search]);
+
+useEffect(() => {
+  const loadAdminPosts = async () => {
+    try {
+      const res = await api.get(`/posts/paged?pageNumber=${adminPageNumber}&pageSize=6`);
+      const enriched = await enrichAdminPosts(res.data.items || []); // 🔹 enrich eklendi
+      setPosts(enriched);
+      setAdminTotalPages(res.data.totalPages);
+      setAdminPageNumber(res.data.pageNumber);
+    } catch (err) {
+      console.error("Admin posts load error", err.response?.status, err.response?.data);
+    }
+  };
+  loadAdminPosts();
+}, [adminPageNumber]);
+
+
+
+const filteredPosts = useMemo(() => {
+  const term = search.trim().toLowerCase();
+  let filtered = (posts || []).filter(p =>
+    term ? (p.title?.toLowerCase().includes(term) || p.content?.toLowerCase().includes(term)) : true
+  );
+
+  switch (adminSortBy) {
+    case "likes":
+      filtered.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      break;
+    case "views":
+      filtered.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+      break;
+    case "comments":
+      filtered.sort((a, b) => (b.commentCount || 0) - (a.commentCount || 0));
+      break;
+    case "date":
+    default:
+      filtered.sort((a, b) => new Date(b.createdAtUtc || b.date || 0) - new Date(a.createdAtUtc || a.date || 0));
+      break;
+  }
+
+  return filtered;
+}, [posts, search, adminSortBy]);
+
 
   const categoryCounts = useMemo(() => {
     const map = {};
@@ -192,7 +275,12 @@ const removeAdmin = async (id) => {
 };
 
 
-  const logout = () => { localStorage.removeItem("token"); navigate("/login"); };
+  const logout = () => { 
+  localStorage.removeItem("token"); 
+  setSearchParams({ page: "1" }); // admin sayfasını sıfırla
+  navigate("/login"); 
+};
+
 
   const truncateContent = (content, maxLength = 150) => {
     if (!content || content.length <= maxLength) return content;
@@ -255,7 +343,22 @@ const removeAdmin = async (id) => {
             <h3 style={{ margin: 0 }}>Gönderiler</h3>
           </div>
           <div style={styles.toolbar}>
-            <input style={styles.input} placeholder="Ara: başlık veya içerik" value={search} onChange={(e)=>setSearch(e.target.value)} />
+            <input 
+              style={styles.input} 
+              placeholder="Ara: başlık veya içerik" 
+              value={search} 
+              onChange={(e)=>setSearch(e.target.value)} 
+            />
+            <select
+      value={adminSortBy}
+      onChange={(e) => setAdminSortBy(e.target.value)}
+      style={styles.input}
+    >
+      <option value="date">Tarihe Göre (Yeni → Eski)</option>
+      <option value="likes">En Çok Beğenilen</option>
+      <option value="views">En Çok Görüntülenen</option>
+      <option value="comments">En Çok Yorum Alan</option>
+    </select>
           </div>
           {(filteredPosts || []).length === 0 ? (
             <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
@@ -284,6 +387,40 @@ const removeAdmin = async (id) => {
               ))}
             </div>
           )}
+{adminTotalPages > 1 && (
+  <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 12 }}>
+    <button
+      style={styles.ghostBtn}
+      disabled={adminPageNumber === 1}
+      onClick={() => {
+  const newPage = adminPageNumber - 1;
+  setAdminPageNumber(newPage);
+  setSearchParams({ page: newPage.toString() });
+}}
+
+    >
+      ← Önceki
+    </button>
+
+    <span style={{ alignSelf: "center" }}>
+      {adminPageNumber} / {adminTotalPages}
+    </span>
+
+    <button
+      style={styles.ghostBtn}
+      disabled={adminPageNumber === adminTotalPages}
+      onClick={() => {
+  const newPage = adminPageNumber + 1;
+  setAdminPageNumber(newPage);
+  setSearchParams({ page: newPage.toString() });
+}}
+
+    >
+      Sonraki →
+    </button>
+  </div>
+)}
+
         </section>
 
         {/* ✅ Yeni Admin Ekle (sadece SuperAdmin görsün) */}
