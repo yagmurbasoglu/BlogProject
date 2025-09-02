@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useSearchParams } from "react-router-dom";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -22,7 +22,10 @@ export default function Admin() {
   const [admins, setAdmins] = useState([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
   const SHOW_ADMIN_LIST = true;
-  const [adminPageNumber, setAdminPageNumber] = useState(1);
+const [searchParams, setSearchParams] = useSearchParams();
+const initialAdminPage = parseInt(searchParams.get("page") || "1", 10);
+const [adminPageNumber, setAdminPageNumber] = useState(initialAdminPage);
+
   const [adminTotalPages, setAdminTotalPages] = useState(1);
 
 
@@ -210,7 +213,12 @@ const removeAdmin = async (id) => {
 };
 
 
-  const logout = () => { localStorage.removeItem("token"); navigate("/login"); };
+  const logout = () => { 
+  localStorage.removeItem("token"); 
+  setSearchParams({ page: "1" }); // admin sayfasını sıfırla
+  navigate("/login"); 
+};
+
 
   const truncateContent = (content, maxLength = 150) => {
     if (!content || content.length <= maxLength) return content;
@@ -307,7 +315,12 @@ const removeAdmin = async (id) => {
     <button
       style={styles.ghostBtn}
       disabled={adminPageNumber === 1}
-      onClick={() => setAdminPageNumber(adminPageNumber - 1)}
+      onClick={() => {
+  const newPage = adminPageNumber - 1;
+  setAdminPageNumber(newPage);
+  setSearchParams({ page: newPage.toString() });
+}}
+
     >
       ← Önceki
     </button>
@@ -319,7 +332,12 @@ const removeAdmin = async (id) => {
     <button
       style={styles.ghostBtn}
       disabled={adminPageNumber === adminTotalPages}
-      onClick={() => setAdminPageNumber(adminPageNumber + 1)}
+      onClick={() => {
+  const newPage = adminPageNumber + 1;
+  setAdminPageNumber(newPage);
+  setSearchParams({ page: newPage.toString() });
+}}
+
     >
       Sonraki →
     </button>

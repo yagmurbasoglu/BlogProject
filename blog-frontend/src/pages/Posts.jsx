@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+
 
 export default function Posts() {
   const [posts, setPosts] = useState([]);
@@ -38,7 +39,10 @@ export default function Posts() {
   const [editingCommentText, setEditingCommentText] = useState("");
   const [editingCommentSaving, setEditingCommentSaving] = useState(false);
   const [sortBy, setSortBy] = useState("date");
-  const [pageNumber, setPageNumber] = useState(1);
+const [searchParams, setSearchParams] = useSearchParams();
+const initialPage = parseInt(searchParams.get("page") || "1", 10);
+const [pageNumber, setPageNumber] = useState(initialPage);
+
   const [totalPages, setTotalPages] = useState(1);
   const [commentPageNumber, setCommentPageNumber] = useState(1);
   const [commentTotalPages, setCommentTotalPages] = useState(1);
@@ -46,7 +50,12 @@ export default function Posts() {
 
 
 
-  const handleLogout = () => { localStorage.removeItem("token"); navigate("/login"); };
+  const handleLogout = () => { 
+  localStorage.removeItem("token"); 
+  setSearchParams({ page: "1" }); // çıkışta sıfırla
+  navigate("/login"); 
+};
+
 
   // Helpers
   const getCurrentUserIdFromToken = () => {
@@ -799,7 +808,12 @@ filtered.sort((a, b) => {
     <button
       style={styles.ghostBtn}
       disabled={pageNumber === 1}
-      onClick={() => setPageNumber(pageNumber - 1)}
+      onClick={() => {
+  const newPage = pageNumber - 1;
+  setPageNumber(newPage);
+  setSearchParams({ page: newPage.toString() });
+}}
+
     >
       ← Önceki
     </button>
@@ -811,7 +825,12 @@ filtered.sort((a, b) => {
     <button
       style={styles.ghostBtn}
       disabled={pageNumber === totalPages}
-      onClick={() => setPageNumber(pageNumber + 1)}
+      onClick={() => {
+  const newPage = pageNumber + 1;
+  setPageNumber(newPage);
+  setSearchParams({ page: newPage.toString() });
+}}
+
     >
       Sonraki →
     </button>
