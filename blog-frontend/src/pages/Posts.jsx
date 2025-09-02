@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+
 
 export default function Posts() {
   const [posts, setPosts] = useState([]);
@@ -38,7 +39,23 @@ export default function Posts() {
   const [editingCommentText, setEditingCommentText] = useState("");
   const [editingCommentSaving, setEditingCommentSaving] = useState(false);
   const [sortBy, setSortBy] = useState("date");
-  const handleLogout = () => { localStorage.removeItem("token"); navigate("/login"); };
+const [searchParams, setSearchParams] = useSearchParams();
+const initialPage = parseInt(searchParams.get("page") || "1", 10);
+const [pageNumber, setPageNumber] = useState(initialPage);
+
+  const [totalPages, setTotalPages] = useState(1);
+  const [commentPageNumber, setCommentPageNumber] = useState(1);
+  const [commentTotalPages, setCommentTotalPages] = useState(1);
+
+
+
+
+  const handleLogout = () => { 
+  localStorage.removeItem("token"); 
+  setSearchParams({ page: "1" }); // çıkışta sıfırla
+  navigate("/login"); 
+};
+
 
   // Helpers
   const getCurrentUserIdFromToken = () => {
@@ -279,10 +296,13 @@ filtered.sort((a, b) => {
         setLoading(true);
         setError("");
         const [postsRes, catsRes] = await Promise.all([
-          api.get("/posts"),
+          api.get(`/posts/paged?pageNumber=${pageNumber}&pageSize=6`),
           api.get("/categories"),
         ]);
-        const basePosts = postsRes.data || [];
+        const basePosts = postsRes.data.items || [];
+        setTotalPages(postsRes.data.totalPages);
+        setPageNumber(postsRes.data.pageNumber);
+
         setCategories(catsRes.data || []);
         const decodedId = getCurrentUserIdFromToken();
         if (decodedId) setCurrentUserId(String(decodedId));
@@ -303,7 +323,20 @@ filtered.sort((a, b) => {
       }
     };
     load();
-  }, []);
+  }, [pageNumber]);
+
+  useEffect(() => {
+    if (commentsOpen && commentsPost) {
+      api.get(`/Comments/${commentsPost.id}/paged?pageNumber=${commentPageNumber}&pageSize=5`)
+        .then(res => {
+          setComments(res.data.items || []);
+          setCommentTotalPages(res.data.totalPages);
+          setCommentPageNumber(res.data.pageNumber);
+        })
+        .catch(() => setComments([]));
+    }
+  }, [commentPageNumber, commentsOpen, commentsPost]);
+
 
   const openCreate = () => {
     const token = localStorage.getItem("token");
@@ -486,8 +519,10 @@ filtered.sort((a, b) => {
       setCommentError("");
       setEditingCommentId(null);
       setEditingCommentText("");
-      const res = await api.get(`/Comments/${post.id}`);
-      setComments(res.data || []);
+      const res = await api.get(`/Comments/${post.id}/paged?pageNumber=${commentPageNumber}&pageSize=5`);
+      setComments(res.data.items || []);
+      setCommentTotalPages(res.data.totalPages);
+      setCommentPageNumber(res.data.pageNumber);
       const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
       setCommentCounts((prev) => ({ ...prev, [String(post.id)]: count }));
     } catch (err) {
@@ -631,7 +666,7 @@ filtered.sort((a, b) => {
             {filteredPosts.map((post) => {
               const isOwner = currentUserId && String(post.authorId) === String(currentUserId);
               const likeCount = post.likeCount ?? 0;
-const userLiked = Boolean(post.likedByCurrentUser);
+              const userLiked = Boolean(post.likedByCurrentUser);
 
               return (
               <article 
@@ -757,6 +792,50 @@ const userLiked = Boolean(post.likedByCurrentUser);
           </div>
         )}
       </div>
+
+      {filteredPosts.length === 0 ? (
+  <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
+) : (
+  <div style={styles.grid}>
+    {filteredPosts.map((post) => {
+      // ... kart renderı
+    })}
+  </div>
+)}
+
+{totalPages > 1 && (
+  <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 12 }}>
+    <button
+      style={styles.ghostBtn}
+      disabled={pageNumber === 1}
+      onClick={() => {
+  const newPage = pageNumber - 1;
+  setPageNumber(newPage);
+  setSearchParams({ page: newPage.toString() });
+}}
+
+    >
+      ← Önceki
+    </button>
+
+    <span style={{ alignSelf: "center" }}>
+      {pageNumber} / {totalPages}
+    </span>
+
+    <button
+      style={styles.ghostBtn}
+      disabled={pageNumber === totalPages}
+      onClick={() => {
+  const newPage = pageNumber + 1;
+  setPageNumber(newPage);
+  setSearchParams({ page: newPage.toString() });
+}}
+
+    >
+      Sonraki →
+    </button>
+  </div>
+)}
 
       {formOpen && (
         <div style={styles.modalOverlay} onClick={closeForm}>
@@ -895,6 +974,31 @@ const userLiked = Boolean(post.likedByCurrentUser);
                   </div>
                 )}
               </div>
+{commentTotalPages > 1 && (
+          <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12 }}>
+            <button
+              style={styles.ghostBtn}
+              disabled={commentPageNumber === 1}
+              onClick={() => setCommentPageNumber(commentPageNumber - 1)}
+            >
+              ← Önceki
+            </button>
+
+            <span style={{ alignSelf: "center" }}>
+              {commentPageNumber} / {commentTotalPages}
+            </span>
+
+            <button
+              style={styles.ghostBtn}
+              disabled={commentPageNumber === commentTotalPages}
+              onClick={() => setCommentPageNumber(commentPageNumber + 1)}
+            >
+              Sonraki →
+            </button>
+          </div>
+        )}
+
+
               {commentError && <div style={styles.errorBox}>{commentError}</div>}
               <div style={{ display: "flex", gap: 8 }}>
                 <input
