@@ -73,6 +73,24 @@ const fetchCommentCount = async (postId) => {
   }
 };
 
+const loadAdminPosts = async (page = adminPageNumber) => {
+  try {
+    const res = await api.get(`/posts/paged?pageNumber=${page}&pageSize=6`);
+    const raw = res.data.items || [];
+
+    // ✅ silinmişleri gizle
+    const visiblePosts = raw.filter(p => !p.isDeleted && !p.deletedAtUtc);
+
+    const enriched = await enrichAdminPosts(visiblePosts);
+    setPosts(enriched);
+    setAdminTotalPages(res.data.totalPages);
+    setAdminPageNumber(res.data.pageNumber);
+  } catch (err) {
+    console.error("Admin posts load error", err.response?.status, err.response?.data);
+  }
+};
+
+
 const enrichAdminPosts = async (rawPosts) => {
   return Promise.all(
     (rawPosts || []).map(async (p) => {
@@ -132,19 +150,9 @@ const loadAdmins = async () => {
 
 
 useEffect(() => {
-  const loadAdminPosts = async () => {
-    try {
-      const res = await api.get(`/posts/paged?pageNumber=${adminPageNumber}&pageSize=6`);
-      const enriched = await enrichAdminPosts(res.data.items || []); // 🔹 enrich eklendi
-      setPosts(enriched);
-      setAdminTotalPages(res.data.totalPages);
-      setAdminPageNumber(res.data.pageNumber);
-    } catch (err) {
-      console.error("Admin posts load error", err.response?.status, err.response?.data);
-    }
-  };
-  loadAdminPosts();
+  loadAdminPosts(adminPageNumber);
 }, [adminPageNumber]);
+
 
 
 
@@ -199,9 +207,9 @@ const filteredPosts = useMemo(() => {
     try {
       setCatSaving(true);
       if (editingCat?.id) {
-        await api.put(`/categories/${editingCat.id}`, { name: catName.trim() });
+        await api.put(`/categories/${editingCat.id}`, { Name: catName.trim() });
       } else {
-        await api.post(`/categories`, { name: catName.trim() });
+        await api.post(`/categories`, { Name: catName.trim() });
       }
       const res = await api.get("/categories");
       setCategories(res.data || []);
@@ -209,7 +217,7 @@ const filteredPosts = useMemo(() => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Save category error", err.response?.status, err.response?.data);
-      alert("Kategori kaydedilemedi.");
+      alert(`Kategori kaydedilemedi. Status: ${err.response?.status}, Data: ${JSON.stringify(err.response?.data)}`);
     } finally {
       setCatSaving(false);
     }
@@ -223,7 +231,7 @@ const filteredPosts = useMemo(() => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Delete category error", err.response?.status, err.response?.data);
-      alert("Kategori silinemedi.");
+      alert(`Kategori silinemedi. Status: ${err.response?.status}, Data: ${JSON.stringify(err.response?.data)}`);
     }
   };
 
@@ -231,7 +239,7 @@ const filteredPosts = useMemo(() => {
     if (!confirm("Gönderiyi silmek istediğine emin misin?")) return;
     try {
       await api.delete(`/posts/${id}`);
-      setPosts(prev => prev.filter(p => p.id !== id));
+      await loadAdminPosts(adminPageNumber);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Delete post error", err.response?.status, err.response?.data);

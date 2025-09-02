@@ -27,7 +27,7 @@ public class CategoriesController : ControllerBase
 
     // ✅ CREATE
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     public async Task<IActionResult> Create([FromBody] CategoryCreateDto dto, CancellationToken ct)
     {
         var command = new CreateCategoryCommand { Name = dto.Name };
@@ -36,7 +36,7 @@ public class CategoriesController : ControllerBase
 
     // ✅ UPDATE
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCategoryCommand command, CancellationToken ct)
     {
         command.Id = id;
@@ -45,7 +45,7 @@ public class CategoriesController : ControllerBase
 
     // ✅ DELETE
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
         => Ok(await _mediator.Send(new DeleteCategoryCommand { Id = id }, ct));
 }
