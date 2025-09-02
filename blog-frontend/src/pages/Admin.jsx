@@ -27,6 +27,7 @@ const initialAdminPage = parseInt(searchParams.get("page") || "1", 10);
 const [adminPageNumber, setAdminPageNumber] = useState(initialAdminPage);
 
   const [adminTotalPages, setAdminTotalPages] = useState(1);
+const [adminSortBy, setAdminSortBy] = useState("date");
 
 
   const getCurrentRoleFromToken = () => {
@@ -45,6 +46,43 @@ const [adminPageNumber, setAdminPageNumber] = useState(initialAdminPage);
       return [];
     }
   };
+
+  // ⬆ useState importlarının altına ekle
+// like ve comment sayıları için yardımcı fonksiyonlar
+const fetchLikeInfo = async (postId) => {
+  try {
+    const res = await api.get(`/PostLikes/${postId}`);
+    if (Array.isArray(res.data)) return res.data.length;
+    if (Array.isArray(res.data?.items)) return res.data.items.length;
+    if (typeof res.data?.count === "number") return res.data.count;
+    return 0;
+  } catch {
+    return 0;
+  }
+};
+
+const fetchCommentCount = async (postId) => {
+  try {
+    const res = await api.get(`/Comments/${postId}`);
+    if (Array.isArray(res.data)) return res.data.length;
+    if (Array.isArray(res.data?.items)) return res.data.items.length;
+    if (typeof res.data?.count === "number") return res.data.count;
+    return 0;
+  } catch {
+    return 0;
+  }
+};
+
+const enrichAdminPosts = async (rawPosts) => {
+  return Promise.all(
+    (rawPosts || []).map(async (p) => {
+      const likeCount = await fetchLikeInfo(p.id);
+      const commentCount = await fetchCommentCount(p.id);
+      return { ...p, likeCount, commentCount };
+    })
+  );
+};
+
 
   const isAdmin = useMemo(() => getCurrentRoleFromToken().some(r => /admin/i.test(r)), []);
 
@@ -92,11 +130,13 @@ const loadAdmins = async () => {
     load();
   }, [isAdmin, navigate]);
 
-  useEffect(() => {
+
+useEffect(() => {
   const loadAdminPosts = async () => {
     try {
       const res = await api.get(`/posts/paged?pageNumber=${adminPageNumber}&pageSize=6`);
-      setPosts(res.data.items || []);
+      const enriched = await enrichAdminPosts(res.data.items || []); // 🔹 enrich eklendi
+      setPosts(enriched);
       setAdminTotalPages(res.data.totalPages);
       setAdminPageNumber(res.data.pageNumber);
     } catch (err) {
@@ -107,10 +147,32 @@ const loadAdmins = async () => {
 }, [adminPageNumber]);
 
 
-  const filteredPosts = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return (posts || []).filter(p => term ? (p.title?.toLowerCase().includes(term) || p.content?.toLowerCase().includes(term)) : true);
-  }, [posts, search]);
+
+const filteredPosts = useMemo(() => {
+  const term = search.trim().toLowerCase();
+  let filtered = (posts || []).filter(p =>
+    term ? (p.title?.toLowerCase().includes(term) || p.content?.toLowerCase().includes(term)) : true
+  );
+
+  switch (adminSortBy) {
+    case "likes":
+      filtered.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      break;
+    case "views":
+      filtered.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+      break;
+    case "comments":
+      filtered.sort((a, b) => (b.commentCount || 0) - (a.commentCount || 0));
+      break;
+    case "date":
+    default:
+      filtered.sort((a, b) => new Date(b.createdAtUtc || b.date || 0) - new Date(a.createdAtUtc || a.date || 0));
+      break;
+  }
+
+  return filtered;
+}, [posts, search, adminSortBy]);
+
 
   const categoryCounts = useMemo(() => {
     const map = {};
@@ -281,7 +343,22 @@ const removeAdmin = async (id) => {
             <h3 style={{ margin: 0 }}>Gönderiler</h3>
           </div>
           <div style={styles.toolbar}>
-            <input style={styles.input} placeholder="Ara: başlık veya içerik" value={search} onChange={(e)=>setSearch(e.target.value)} />
+            <input 
+              style={styles.input} 
+              placeholder="Ara: başlık veya içerik" 
+              value={search} 
+              onChange={(e)=>setSearch(e.target.value)} 
+            />
+            <select
+      value={adminSortBy}
+      onChange={(e) => setAdminSortBy(e.target.value)}
+      style={styles.input}
+    >
+      <option value="date">Tarihe Göre (Yeni → Eski)</option>
+      <option value="likes">En Çok Beğenilen</option>
+      <option value="views">En Çok Görüntülenen</option>
+      <option value="comments">En Çok Yorum Alan</option>
+    </select>
           </div>
           {(filteredPosts || []).length === 0 ? (
             <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
