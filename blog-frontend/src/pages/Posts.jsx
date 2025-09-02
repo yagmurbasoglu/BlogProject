@@ -193,6 +193,42 @@ const fetchAuthors = async (posts) => {
   } catch (_) {}
 };
 
+// ✅ Yeni ekle
+const loadPosts = async (page = pageNumber) => {
+  try {
+    setLoading(true);
+    setError("");
+    const [postsRes, catsRes] = await Promise.all([
+      api.get(`/posts/paged?pageNumber=${page}&pageSize=6`),
+      api.get("/categories"),
+    ]);
+
+    const basePosts = (postsRes.data.items || []).filter(
+      (p) => !p.isDeleted && !p.deletedAtUtc
+    );
+
+    setTotalPages(postsRes.data.totalPages);
+    setPageNumber(postsRes.data.pageNumber);
+
+    setCategories(catsRes.data || []);
+    const decodedId = getCurrentUserIdFromToken();
+    if (decodedId) setCurrentUserId(String(decodedId));
+    if ((catsRes.data || []).length > 0) {
+      setCategoryId(String(catsRes.data[0].id));
+    }
+
+    const enriched = await enrichPosts(basePosts);
+    await fetchCommentCounts(enriched);
+    await fetchAuthors(enriched);
+    setPosts(enriched);
+  } catch (err) {
+    console.error("Posts load error", err.response?.status, err.response?.data);
+    setError("Veriler yüklenemedi");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const findDateField = (post) => {
     // Prefer backend field names first
@@ -290,40 +326,10 @@ filtered.sort((a, b) => {
     return filtered;
   }, [posts, selectedCategoryId, search, sortBy]);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const [postsRes, catsRes] = await Promise.all([
-          api.get(`/posts/paged?pageNumber=${pageNumber}&pageSize=6`),
-          api.get("/categories"),
-        ]);
-        const basePosts = postsRes.data.items || [];
-        setTotalPages(postsRes.data.totalPages);
-        setPageNumber(postsRes.data.pageNumber);
+useEffect(() => {
+  loadPosts(pageNumber);
+}, [pageNumber]);
 
-        setCategories(catsRes.data || []);
-        const decodedId = getCurrentUserIdFromToken();
-        if (decodedId) setCurrentUserId(String(decodedId));
-        if ((catsRes.data || []).length > 0) {
-          setCategoryId(String(catsRes.data[0].id));
-        }
-        
-        const enriched = await enrichPosts(basePosts);
-        await fetchCommentCounts(enriched); // Fetch comment counts after posts are enriched
-        await fetchAuthors(enriched); // Fetch authors after posts are enriched
-        setPosts(enriched);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("Posts load error", err.response?.status, err.response?.data);
-        setError("Veriler yüklenemedi");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [pageNumber]);
 
   useEffect(() => {
     if (commentsOpen && commentsPost) {
@@ -402,16 +408,7 @@ filtered.sort((a, b) => {
       await send(usePascalCase ? payloadPascal : payloadPascal);
       // Optimistic refresh: önce modalı kapat, sonra listeyi tazele
       setFormOpen(false);
-      try {
-        const refreshed = await api.get("/posts");
-        const base = refreshed.data || [];
-        const enriched = await enrichPosts(base);
-        await fetchCommentCounts(enriched); // Re-fetch comment counts after saving
-        await fetchAuthors(enriched); // Re-fetch authors after saving
-        setPosts(enriched);
-      } catch (_) {
-        // Listeyi alamazsak sessiz geç
-      }
+     await loadPosts(pageNumber);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Save post error:", {
@@ -451,7 +448,7 @@ filtered.sort((a, b) => {
     if (!confirm("Bu gönderiyi silmek istediğine emin misin?")) return;
     try {
       await api.delete(`/posts/${postId}`);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      await loadPosts(pageNumber);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Delete post error:", err.response?.status, err.response?.data);

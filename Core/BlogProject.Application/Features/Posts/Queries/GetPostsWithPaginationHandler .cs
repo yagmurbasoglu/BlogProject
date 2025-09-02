@@ -20,7 +20,10 @@ namespace BlogProject.Application.Features.Posts.Queries
 
             // ❌ var query = repo.GetAll().OrderByDescending(x => x.CreatedAt);
             // ✅ Doğru kullanım:
-            var query = repo.Query().OrderByDescending(x => x.CreatedAtUtc);
+            var query = repo.Query()
+    .Where(x => x.DeletedAtUtc == null)
+    .OrderByDescending(x => x.CreatedAtUtc);
+
 
             var totalCount = await query.CountAsync(cancellationToken);
 
