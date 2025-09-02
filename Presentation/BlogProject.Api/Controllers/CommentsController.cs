@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using BlogProject.Application.Features.Comments.Commands.UpdateComment;
 using BlogProject.Application.Features.Comments.Commands.DeleteComment;
 using System.Security.Claims;
+using BlogProject.Application.Features.Comments.Queries;
 
 namespace BlogProject.Api.Controllers;
 
@@ -81,6 +82,20 @@ public class CommentsController : ControllerBase
             ? Ok(new { Message = "Yorum silindi" })
             : Forbid("Yorumu silemezsin");
     }
+
+    [HttpGet("{postId:guid}/paged")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPaged(Guid postId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5)
+    {
+        var result = await _mediator.Send(new GetCommentsWithPaginationQuery
+        {
+            PostId = postId,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        });
+        return Ok(result);
+    }
+
 
 
 }

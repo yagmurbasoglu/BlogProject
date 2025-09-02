@@ -40,6 +40,8 @@ export default function Posts() {
   const [sortBy, setSortBy] = useState("date");
   const [pageNumber, setPageNumber] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [commentPageNumber, setCommentPageNumber] = useState(1);
+  const [commentTotalPages, setCommentTotalPages] = useState(1);
 
 
 
@@ -314,6 +316,19 @@ filtered.sort((a, b) => {
     load();
   }, [pageNumber]);
 
+  useEffect(() => {
+    if (commentsOpen && commentsPost) {
+      api.get(`/Comments/${commentsPost.id}/paged?pageNumber=${commentPageNumber}&pageSize=5`)
+        .then(res => {
+          setComments(res.data.items || []);
+          setCommentTotalPages(res.data.totalPages);
+          setCommentPageNumber(res.data.pageNumber);
+        })
+        .catch(() => setComments([]));
+    }
+  }, [commentPageNumber, commentsOpen, commentsPost]);
+
+
   const openCreate = () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -495,8 +510,10 @@ filtered.sort((a, b) => {
       setCommentError("");
       setEditingCommentId(null);
       setEditingCommentText("");
-      const res = await api.get(`/Comments/${post.id}`);
-      setComments(res.data || []);
+      const res = await api.get(`/Comments/${post.id}/paged?pageNumber=${commentPageNumber}&pageSize=5`);
+      setComments(res.data.items || []);
+      setCommentTotalPages(res.data.totalPages);
+      setCommentPageNumber(res.data.pageNumber);
       const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
       setCommentCounts((prev) => ({ ...prev, [String(post.id)]: count }));
     } catch (err) {
@@ -938,6 +955,31 @@ filtered.sort((a, b) => {
                   </div>
                 )}
               </div>
+{commentTotalPages > 1 && (
+          <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12 }}>
+            <button
+              style={styles.ghostBtn}
+              disabled={commentPageNumber === 1}
+              onClick={() => setCommentPageNumber(commentPageNumber - 1)}
+            >
+              ← Önceki
+            </button>
+
+            <span style={{ alignSelf: "center" }}>
+              {commentPageNumber} / {commentTotalPages}
+            </span>
+
+            <button
+              style={styles.ghostBtn}
+              disabled={commentPageNumber === commentTotalPages}
+              onClick={() => setCommentPageNumber(commentPageNumber + 1)}
+            >
+              Sonraki →
+            </button>
+          </div>
+        )}
+
+
               {commentError && <div style={styles.errorBox}>{commentError}</div>}
               <div style={{ display: "flex", gap: 8 }}>
                 <input
