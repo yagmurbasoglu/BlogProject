@@ -22,6 +22,9 @@ export default function Admin() {
   const [admins, setAdmins] = useState([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
   const SHOW_ADMIN_LIST = true;
+  const [adminPageNumber, setAdminPageNumber] = useState(1);
+  const [adminTotalPages, setAdminTotalPages] = useState(1);
+
 
   const getCurrentRoleFromToken = () => {
     try {
@@ -85,6 +88,21 @@ const loadAdmins = async () => {
     };
     load();
   }, [isAdmin, navigate]);
+
+  useEffect(() => {
+  const loadAdminPosts = async () => {
+    try {
+      const res = await api.get(`/posts/paged?pageNumber=${adminPageNumber}&pageSize=6`);
+      setPosts(res.data.items || []);
+      setAdminTotalPages(res.data.totalPages);
+      setAdminPageNumber(res.data.pageNumber);
+    } catch (err) {
+      console.error("Admin posts load error", err.response?.status, err.response?.data);
+    }
+  };
+  loadAdminPosts();
+}, [adminPageNumber]);
+
 
   const filteredPosts = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -284,6 +302,30 @@ const removeAdmin = async (id) => {
               ))}
             </div>
           )}
+{adminTotalPages > 1 && (
+  <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 12 }}>
+    <button
+      style={styles.ghostBtn}
+      disabled={adminPageNumber === 1}
+      onClick={() => setAdminPageNumber(adminPageNumber - 1)}
+    >
+      ← Önceki
+    </button>
+
+    <span style={{ alignSelf: "center" }}>
+      {adminPageNumber} / {adminTotalPages}
+    </span>
+
+    <button
+      style={styles.ghostBtn}
+      disabled={adminPageNumber === adminTotalPages}
+      onClick={() => setAdminPageNumber(adminPageNumber + 1)}
+    >
+      Sonraki →
+    </button>
+  </div>
+)}
+
         </section>
 
         {/* ✅ Yeni Admin Ekle (sadece SuperAdmin görsün) */}
