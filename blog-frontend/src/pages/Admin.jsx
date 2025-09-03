@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
 import { useNavigate,useSearchParams } from "react-router-dom";
+import { toast } from "react-toastify"
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -86,7 +87,12 @@ const loadAdminPosts = async (page = adminPageNumber) => {
     setAdminTotalPages(res.data.totalPages);
     setAdminPageNumber(res.data.pageNumber);
   } catch (err) {
-    console.error("Admin posts load error", err.response?.status, err.response?.data);
+        console.error("Admin posts load error", err.response?.status, err.response?.data);
+    const msg =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "Gönderiler yüklenemedi ❌";
+    toast.error(msg);
   }
 };
 
@@ -112,6 +118,7 @@ const loadAdmins = async () => {
   } catch (err) {
     console.error("Adminleri yükleme hatası:", err.response?.status, err.response?.data);
     setAdmins([]);
+    toast.error("Adminler yüklenemedi ❌");
   } finally {
     setAdminsLoading(false);
   }
@@ -120,7 +127,7 @@ const loadAdmins = async () => {
 
   useEffect(() => {
     if (!isAdmin) {
-      alert("Bu sayfaya erişim için yönetici yetkisi gerekir.");
+      toast.error("Bu sayfaya erişim için yönetici yetkisi gerekir ❌");
       navigate("/posts");
       return;
     }
@@ -141,6 +148,7 @@ const loadAdmins = async () => {
         // eslint-disable-next-line no-console
         console.error("Admin load error", err.response?.status, err.response?.data);
         setError("Veriler yüklenemedi.");
+        toast.error("Veriler yüklenemedi ❌");
       } finally {
         setLoading(false);
       }
@@ -208,8 +216,10 @@ const filteredPosts = useMemo(() => {
       setCatSaving(true);
       if (editingCat?.id) {
         await api.put(`/categories/${editingCat.id}`, { Name: catName.trim() });
+        toast.success("Kategori başarıyla güncellendi ✅");
       } else {
         await api.post(`/categories`, { Name: catName.trim() });
+        toast.success("Kategori başarıyla eklendi ✅");
       }
       const res = await api.get("/categories");
       setCategories(res.data || []);
@@ -217,35 +227,48 @@ const filteredPosts = useMemo(() => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Save category error", err.response?.status, err.response?.data);
-      alert(`Kategori kaydedilemedi. Status: ${err.response?.status}, Data: ${JSON.stringify(err.response?.data)}`);
+      const msg =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "Kategori kaydedilemedi ❌";
+    toast.error(msg);
     } finally {
       setCatSaving(false);
     }
   };
 
-  const deleteCategory = async (id) => {
-    if (!confirm("Kategoriyi silmek istediğine emin misin?")) return;
-    try {
-      await api.delete(`/categories/${id}`);
-      setCategories(prev => prev.filter(c => c.id !== id));
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Delete category error", err.response?.status, err.response?.data);
-      alert(`Kategori silinemedi. Status: ${err.response?.status}, Data: ${JSON.stringify(err.response?.data)}`);
-    }
-  };
+const deleteCategory = async (id) => {
+  if (!confirm("Kategoriyi silmek istediğine emin misin?")) return;
+  try {
+    await api.delete(`/categories/${id}`);
+    setCategories(prev => prev.filter(c => c.id !== id));
+    toast.success("Kategori başarıyla silindi 🗑️");
+  } catch (err) {
+    console.error("Delete category error", err.response?.status, err.response?.data);
+    const msg =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "Kategori silinemedi ❌";
+    toast.error(msg);
+  }
+};
 
-  const deletePost = async (id) => {
-    if (!confirm("Gönderiyi silmek istediğine emin misin?")) return;
-    try {
-      await api.delete(`/posts/${id}`);
-      await loadAdminPosts(adminPageNumber);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Delete post error", err.response?.status, err.response?.data);
-      alert("Gönderi silinemedi.");
-    }
-  };
+const deletePost = async (id) => {
+  if (!confirm("Gönderiyi silmek istediğine emin misin?")) return;
+  try {
+    await api.delete(`/posts/${id}`);
+    await loadAdminPosts(adminPageNumber);
+    toast.success("Gönderi başarıyla silindi 🗑️");
+  } catch (err) {
+    console.error("Delete post error", err.response?.status, err.response?.data);
+    const msg =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "Gönderi silinemedi ❌";
+    toast.error(msg);
+  }
+};
+
 
 // --- ekle ---
 const isSuperAdmin = useMemo(() => 
@@ -254,38 +277,52 @@ const isSuperAdmin = useMemo(() =>
 
 // --- promoteToAdmin fonksiyonunu güncelle ---
 const promoteToAdmin = async () => {
-  if (!promoteUserId.trim()) return;
+  if (!promoteUserId.trim()) {
+    toast.warn("Kullanıcı ID girmeniz gerekiyor ⚠️");
+    return;
+  }
   try {
     setPromoteSaving(true);
     await api.post(`/Auth/promote-to-admin/${promoteUserId.trim()}`);
-    alert("✅ Kullanıcı admin yapıldı.\nRolün aktif olabilmesi için tekrar giriş yapılmalıdır.");
+    toast.success("✅ Kullanıcı admin yapıldı. Rolün aktif olabilmesi için tekrar giriş yapılmalıdır.");
     setPromoteUserId("");
     await loadAdmins(); // listeyi yenile
   } catch (err) {
     console.error("Promote admin error", err.response?.status, err.response?.data);
-    alert("❌ Kullanıcı admin yapılamadı.");
+    const msg =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "❌ Kullanıcı admin yapılamadı.";
+    toast.error(msg);
   } finally {
     setPromoteSaving(false);
   }
 };
+
 
 // --- yeni fonksiyon: admin silme ---
 const removeAdmin = async (id) => {
   if (!confirm("Bu kullanıcının adminliğini kaldırmak istediğinize emin misiniz?")) return;
   try {
     await api.delete(`/users/remove-admin/${id}`);
-    alert("✅ Admin rolü kaldırıldı.");
+    toast.success("✅ Admin rolü kaldırıldı.");
     setAdmins(prev => prev.filter(a => a.id !== id));
   } catch (err) {
     console.error("Remove admin error", err.response?.status, err.response?.data);
-    alert("❌ Admin rolü kaldırılamadı.");
+    const msg =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "❌ Admin rolü kaldırılamadı.";
+    toast.error(msg);
   }
 };
+
 
 
   const logout = () => { 
   localStorage.removeItem("token"); 
   setSearchParams({ page: "1" }); // admin sayfasını sıfırla
+  toast.info("Oturum kapatıldı 👋");
   navigate("/login"); 
 };
 

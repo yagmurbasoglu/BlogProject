@@ -32,9 +32,10 @@ namespace BlogProject.Application.Features.Posts.Commands.DeletePost
 
             // admin mi kontrol et
             var isAdmin = await _userManager.IsInRoleAsync(requester, "Admin");
+            var isSuperAdmin = await _userManager.IsInRoleAsync(requester, "SuperAdmin");
 
             // eğer postun sahibi değilse ve admin değilse → yetkisiz
-            if (post.AuthorId != request.UserId && !isAdmin)
+            if (post.AuthorId != request.UserId && !isAdmin && !isSuperAdmin)
                 throw new UnauthorizedException("You are not allowed to delete this post");
 
             // soft delete
