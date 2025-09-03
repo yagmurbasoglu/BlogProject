@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export default function Register() {
   const [userName, setUserName] = useState("");
@@ -23,7 +24,9 @@ export default function Register() {
     e.preventDefault();
 
     if (!isFormValid) {
-      setError("Lütfen geçerli bilgiler girin (kullanıcı adı ≥3, şifre ≥6)");
+const msg = "Lütfen geçerli bilgiler girin (kullanıcı adı ≥3, şifre ≥6)";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -32,7 +35,7 @@ export default function Register() {
       setError("");
 
       await api.post("/auth/register", { userName, email, password });
-
+toast.success("Kayıt başarılı 🎉 Giriş yapabilirsiniz.");
       navigate("/login");
     } catch (err) {
       // Geliştirici konsolu için detaylı log
@@ -42,11 +45,19 @@ export default function Register() {
         status: err.response?.status,
         data: err.response?.data,
       });
-      const backendMessage =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message;
-      setError(backendMessage || "Kayıt başarısız, tekrar deneyin.");
+      let backendMessage = "";
+      if (typeof err.response?.data === "string") {
+        backendMessage = err.response.data;
+      } else if (err.response?.data) {
+        backendMessage =
+          err.response.data.message ||
+          err.response.data.error ||
+          err.response.data.title;
+      }
+
+      const msg = backendMessage || "Kayıt başarısız, tekrar deneyin.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

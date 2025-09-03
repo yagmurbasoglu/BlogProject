@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
+import { toast } from "react-toastify"
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -39,7 +40,9 @@ export default function Login() {
     e.preventDefault();
 
     if (!isFormValid) {
-      setError("Geçerli email ve en az 6 karakter şifre girin");
+      const msg = "Geçerli email ve en az 6 karakter şifre girin";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -55,23 +58,39 @@ export default function Login() {
       }
       localStorage.setItem("token", String(extracted));
 
+      toast.success("Giriş başarılı 🎉");
+
       const { isAdmin } = getRolesFromToken(extracted);
       navigate("/posts");
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Login error:", {
-        message: err.message,
-        status: err.response?.status,
-        data: err.response?.data,
-      });
-      const backendMessage =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message;
-      setError(backendMessage || "Giriş başarısız, bilgileri kontrol edin.");
-    } finally {
-      setLoading(false);
-    }
+} catch (err) {
+  console.error("Login error:", {
+    message: err.message,
+    status: err.response?.status,
+    data: err.response?.data,
+  });
+
+  let backendMessage = "";
+
+  if (typeof err.response?.data === "string") {
+    backendMessage = err.response.data;
+  } else if (err.response?.data) {
+    if (err.response.data.message) backendMessage = err.response.data.message;
+    else if (err.response.data.error) backendMessage = err.response.data.error;
+    else if (err.response.data.title) backendMessage = err.response.data.title;
+  }
+
+  // 👉 Eğer backend "Invalid credential" derse, kendi mesajını yaz
+  if (backendMessage.toLowerCase().includes("invalid credential")) {
+    backendMessage = "Email veya şifre hatalı.";
+  }
+
+  const msg = backendMessage || "Giriş başarısız, bilgileri kontrol edin.";
+  setError(msg);
+  toast.error(msg);
+} finally {
+  setLoading(false);
+}
+
   };
 
   return (
