@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
-
+import { toast } from "react-toastify";
 
 export default function Posts() {
   const [posts, setPosts] = useState([]);
@@ -54,6 +54,7 @@ const [pageNumber, setPageNumber] = useState(initialPage);
   localStorage.removeItem("token"); 
   setSearchParams({ page: "1" }); // çıkışta sıfırla
   navigate("/login"); 
+  toast.info("Oturum kapatıldı 👋");
 };
 
 
@@ -224,6 +225,7 @@ const loadPosts = async (page = pageNumber) => {
   } catch (err) {
     console.error("Posts load error", err.response?.status, err.response?.data);
     setError("Veriler yüklenemedi");
+    toast.error("Gönderiler yüklenemedi ❌");
   } finally {
     setLoading(false);
   }
@@ -347,7 +349,7 @@ useEffect(() => {
   const openCreate = () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Gönderi paylaşmak için giriş yapmalısınız.");
+      toast.warn("Gönderi paylaşmak için giriş yapmalısınız ⚠️")
       navigate("/login");
       return;
     }
@@ -371,6 +373,7 @@ useEffect(() => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Open detail error:", err.response?.status, err.response?.data);
+      toast.error("Gönderi detayı yüklenemedi ❌")
     }
   };
 
@@ -387,78 +390,67 @@ useEffect(() => {
     setFormOpen(false);
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!title.trim() || !content.trim() || !categoryId) return;
-    try {
-      setSaving(true);
-      setFormError("");
-      // Backend kategori kimliği GUID/string bekliyor olabilir; Number'a çevirmeyelim
-      const payloadCamel = { title: title.trim(), content: content.trim(), categoryId: String(categoryId) };
-      const payloadPascal = { Title: title.trim(), Content: content.trim(), CategoryId: String(categoryId) };
+const handleSave = async (e) => {
+  e.preventDefault();
+  if (!title.trim() || !content.trim() || !categoryId) return;
+  try {
+    setSaving(true);
+    setFormError("");
 
-      const send = async (payload) => {
-        if (editingPost?.id) {
-          return api.put(`/posts/${editingPost.id}`, payload);
-        }
-        return api.post("/posts", payload);
-      };
+    const payloadPascal = { Title: title.trim(), Content: content.trim(), CategoryId: String(categoryId) };
+    const send = async (payload) => {
+      if (editingPost?.id) {
+        return api.put(`/posts/${editingPost.id}`, payload);
+      }
+      return api.post("/posts", payload);
+    };
 
-      // .NET backend genellikle PascalCase bekler
-      await send(usePascalCase ? payloadPascal : payloadPascal);
-      // Optimistic refresh: önce modalı kapat, sonra listeyi tazele
-      setFormOpen(false);
-     await loadPosts(pageNumber);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Save post error:", {
-        message: err.message,
-        status: err.response?.status,
-        data: err.response?.data,
-      });
-      let backendMessage =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
-      // .NET ModelState tarzı: { errors: { Field: ["msg1", "msg2"] } }
-      const errorsObj = err.response?.data?.errors;
-      if (!backendMessage && errorsObj && typeof errorsObj === "object") {
-        const firstKey = Object.keys(errorsObj)[0];
-        const firstMsg = Array.isArray(errorsObj[firstKey]) ? errorsObj[firstKey][0] : String(errorsObj[firstKey]);
-        backendMessage = firstMsg;
-      }
-      // Yetkisiz (başkasının gönderisi) durumunda yönlendirme yapma, mesaj göster
-      const status = err.response?.status;
-      if (status === 403 || (status === 401 && localStorage.getItem("token"))) {
-        setFormError(backendMessage || "Bu gönderiyi düzenleme yetkiniz yok.");
-        return;
-      }
-      if (status === 401 && !localStorage.getItem("token")) {
-        alert("Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.");
-        navigate("/login");
-        return;
-      }
-      setFormError(backendMessage || "Gönderi kaydedilemedi. Lütfen tekrar deneyin.");
-    } finally {
-      setSaving(false);
+    await send(payloadPascal);
+
+    setFormOpen(false);
+    await loadPosts(pageNumber);
+
+    // ✅ Başarılı mesaj
+    toast.success(editingPost ? "Gönderi güncellendi ✅" : "Gönderi paylaşıldı 🚀");
+  } catch (err) {
+    console.error("Save post error:", err.response?.status, err.response?.data);
+    let backendMessage =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || "Gönderi kaydedilemedi.";
+    setFormError(backendMessage);
+
+    // ❌ Hata mesajı
+    toast.error(backendMessage || "Gönderi kaydedilemedi ❌");
+  } finally {
+    setSaving(false);
+  }
+};
+
+
+const handleDelete = async (postId) => {
+  if (!confirm("Bu gönderiyi silmek istediğine emin misin?")) return;
+  try {
+    await api.delete(`/posts/${postId}`);
+    await loadPosts(pageNumber);
+
+    toast.success("Gönderi silindi 🗑️");
+  } catch (err) {
+    console.error("Delete post error:", err.response?.status, err.response?.data);
+
+    let backendMessage =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
+
+    if (!backendMessage) {
+      backendMessage = "Gönderi silinemedi ❌";
     }
-  };
 
-  const handleDelete = async (postId) => {
-    if (!confirm("Bu gönderiyi silmek istediğine emin misin?")) return;
-    try {
-      await api.delete(`/posts/${postId}`);
-      await loadPosts(pageNumber);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Delete post error:", err.response?.status, err.response?.data);
-      const backendMessage =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message || "Gönderi silinemedi.";
-      alert(backendMessage);
-    }
-  };
+    toast.error(String(backendMessage));
+  }
+};
+
 
   const handleToggleLike = async (post) => {
     try {
@@ -504,7 +496,7 @@ useEffect(() => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Toggle like error:", err.response?.status, err.response?.data);
-      alert("Beğeni işlemi başarısız oldu.");
+      toast.error("Beğeni işlemi başarısız oldu ❌");
     }
   };
 
@@ -529,42 +521,74 @@ useEffect(() => {
     }
   };
 
-  const handleAddComment = async () => {
-    if (!commentText.trim() || !commentsPost) return;
-    try {
-      setCommentSaving(true);
-      setCommentError("");
-      await api.post(`/Comments`, { postId: String(commentsPost.id), authorId: currentUserId, content: commentText.trim() });
+const handleAddComment = async () => {
+  if (!commentText.trim() || !commentsPost) return;
+  try {
+    setCommentSaving(true);
+    setCommentError("");
+
+    await api.post(`/Comments`, { 
+      postId: String(commentsPost.id), 
+      authorId: currentUserId, 
+      content: commentText.trim() 
+    });
+
+    const res = await api.get(`/Comments/${commentsPost.id}`);
+    setComments(res.data || []);
+    const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
+    setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+    setCommentText("");
+
+    // ✅ Başarılı mesaj
+    toast.success("Yorum eklendi 💬");
+  } catch (err) {
+    console.error("Add comment error:", err.response?.status, err.response?.data);
+    const backendMessage = typeof err.response?.data === "string" 
+      ? err.response.data 
+      : (err.response?.data?.message || "Yorum eklenemedi.");
+    setCommentError(backendMessage);
+
+    // ❌ Hata mesajı
+    toast.error(backendMessage || "Yorum eklenemedi ❌");
+  } finally {
+    setCommentSaving(false);
+  }
+};
+
+
+const handleDeleteComment = async (commentId) => {
+  try {
+    await api.delete(`/Comments/${commentId}`);
+    if (commentsPost) {
       const res = await api.get(`/Comments/${commentsPost.id}`);
       setComments(res.data || []);
-      const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
+      const count = Array.isArray(res.data)
+        ? res.data.length
+        : (Array.isArray(res.data?.items)
+            ? res.data.items.length
+            : (typeof res.data?.count === "number" ? res.data.count : 0));
       setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
-      setCommentText("");
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Add comment error:", err.response?.status, err.response?.data);
-      const backendMessage = typeof err.response?.data === "string" ? err.response.data : (err.response?.data?.message || "Yorum eklenemedi.");
-      setCommentError(backendMessage);
-    } finally {
-      setCommentSaving(false);
     }
-  };
 
-  const handleDeleteComment = async (commentId) => {
-    try {
-      await api.delete(`/Comments/${commentId}`);
-      if (commentsPost) {
-        const res = await api.get(`/Comments/${commentsPost.id}`);
-        setComments(res.data || []);
-        const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
-        setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
-      }
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Delete comment error:", err.response?.status, err.response?.data);
-      alert("Yorum silinemedi");
+    // ✅ Başarı mesajı
+    toast.success("Yorum silindi 🗑️");
+  } catch (err) {
+    console.error("Delete comment error:", err.response?.status, err.response?.data);
+
+    let backendMessage =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
+
+    if (!backendMessage) {
+      backendMessage = "Yorum silinemedi ❌";
     }
-  };
+
+    // ❌ Hata mesajı
+    toast.error(backendMessage);
+  }
+};
+
 
   const startEditComment = (comment) => {
     setEditingCommentId(comment.id);
@@ -577,34 +601,53 @@ useEffect(() => {
     setEditingCommentText("");
   };
 
-  const handleUpdateComment = async () => {
-    if (!editingCommentId || !editingCommentText.trim()) return;
-    try {
-      setEditingCommentSaving(true);
-      setCommentError("");
-      await api.put(`/Comments/${editingCommentId}`, { content: editingCommentText.trim() });
-      if (commentsPost) {
-        const res = await api.get(`/Comments/${commentsPost.id}`);
-        setComments(res.data || []);
-        const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
-        setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
-      }
-      setEditingCommentId(null);
-      setEditingCommentText("");
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Update comment error:", err.response?.status, err.response?.data);
-      const backendMessage = typeof err.response?.data === "string" ? err.response.data : (err.response?.data?.message || "Yorum güncellenemedi.");
-      setCommentError(backendMessage);
-    } finally {
-      setEditingCommentSaving(false);
+const handleUpdateComment = async () => {
+  if (!editingCommentId || !editingCommentText.trim()) return;
+  try {
+    setEditingCommentSaving(true);
+    setCommentError("");
+    await api.put(`/Comments/${editingCommentId}`, { content: editingCommentText.trim() });
+    if (commentsPost) {
+      const res = await api.get(`/Comments/${commentsPost.id}`);
+      setComments(res.data || []);
+      const count = Array.isArray(res.data)
+        ? res.data.length
+        : (Array.isArray(res.data?.items)
+            ? res.data.items.length
+            : (typeof res.data?.count === "number" ? res.data.count : 0));
+      setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
     }
-  };
+    setEditingCommentId(null);
+    setEditingCommentText("");
+
+    // ✅ Başarı mesajı
+    toast.success("Yorum güncellendi ✏️");
+  } catch (err) {
+    console.error("Update comment error:", err.response?.status, err.response?.data);
+
+    let backendMessage =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
+
+    if (!backendMessage) {
+      backendMessage = "Yorum güncellenemedi ❌";
+    }
+
+    setCommentError(backendMessage);
+    // ❌ Toast hata bildirimi
+    toast.error(backendMessage);
+  } finally {
+    setEditingCommentSaving(false);
+  }
+};
+
 
   if (loading) return <div style={styles.centerWrap}><p>Yükleniyor...</p></div>;
   if (error) return <div style={styles.centerWrap}><p style={{ color: "#ff6b6b" }}>{error}</p></div>;
 
   return (
+    <>
     <div style={styles.pageWrapper}>
       <div style={styles.container}>
         <header style={styles.header}>
@@ -1015,6 +1058,7 @@ useEffect(() => {
         </div>
       )}
     </div>
+    </>
   );
 }
 
