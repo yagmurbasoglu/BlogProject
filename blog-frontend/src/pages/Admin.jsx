@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
-import { useNavigate,useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify"
 
 export default function Admin() {
@@ -23,12 +23,12 @@ export default function Admin() {
   const [admins, setAdmins] = useState([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
   const SHOW_ADMIN_LIST = true;
-const [searchParams, setSearchParams] = useSearchParams();
-const initialAdminPage = parseInt(searchParams.get("page") || "1", 10);
-const [adminPageNumber, setAdminPageNumber] = useState(initialAdminPage);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialAdminPage = parseInt(searchParams.get("page") || "1", 10);
+  const [adminPageNumber, setAdminPageNumber] = useState(initialAdminPage);
 
   const [adminTotalPages, setAdminTotalPages] = useState(1);
-const [adminSortBy, setAdminSortBy] = useState("date");
+  const [adminSortBy, setAdminSortBy] = useState("date");
 
 
   const getCurrentRoleFromToken = () => {
@@ -49,79 +49,79 @@ const [adminSortBy, setAdminSortBy] = useState("date");
   };
 
   // ⬆ useState importlarının altına ekle
-// like ve comment sayıları için yardımcı fonksiyonlar
-const fetchLikeInfo = async (postId) => {
-  try {
-    const res = await api.get(`/PostLikes/${postId}`);
-    if (Array.isArray(res.data)) return res.data.length;
-    if (Array.isArray(res.data?.items)) return res.data.items.length;
-    if (typeof res.data?.count === "number") return res.data.count;
-    return 0;
-  } catch {
-    return 0;
-  }
-};
+  // like ve comment sayıları için yardımcı fonksiyonlar
+  const fetchLikeInfo = async (postId) => {
+    try {
+      const res = await api.get(`/PostLikes/${postId}`);
+      if (Array.isArray(res.data)) return res.data.length;
+      if (Array.isArray(res.data?.items)) return res.data.items.length;
+      if (typeof res.data?.count === "number") return res.data.count;
+      return 0;
+    } catch {
+      return 0;
+    }
+  };
 
-const fetchCommentCount = async (postId) => {
-  try {
-    const res = await api.get(`/Comments/${postId}`);
-    if (Array.isArray(res.data)) return res.data.length;
-    if (Array.isArray(res.data?.items)) return res.data.items.length;
-    if (typeof res.data?.count === "number") return res.data.count;
-    return 0;
-  } catch {
-    return 0;
-  }
-};
+  const fetchCommentCount = async (postId) => {
+    try {
+      const res = await api.get(`/Comments/${postId}`);
+      if (Array.isArray(res.data)) return res.data.length;
+      if (Array.isArray(res.data?.items)) return res.data.items.length;
+      if (typeof res.data?.count === "number") return res.data.count;
+      return 0;
+    } catch {
+      return 0;
+    }
+  };
 
-const loadAdminPosts = async (page = adminPageNumber) => {
-  try {
-    const res = await api.get(`/posts/paged?pageNumber=${page}&pageSize=6`);
-    const raw = res.data.items || [];
+  const loadAdminPosts = async (page = adminPageNumber) => {
+    try {
+      const res = await api.get(`/posts/paged?pageNumber=${page}&pageSize=6`);
+      const raw = res.data.items || [];
 
-    // ✅ silinmişleri gizle
-    const visiblePosts = raw.filter(p => !p.isDeleted && !p.deletedAtUtc);
+      // ✅ silinmişleri gizle
+      const visiblePosts = raw.filter(p => !p.isDeleted && !p.deletedAtUtc);
 
-    const enriched = await enrichAdminPosts(visiblePosts);
-    setPosts(enriched);
-    setAdminTotalPages(res.data.totalPages);
-    setAdminPageNumber(res.data.pageNumber);
-  } catch (err) {
-        console.error("Admin posts load error", err.response?.status, err.response?.data);
-    const msg =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || "Gönderiler yüklenemedi ❌";
-    toast.error(msg);
-  }
-};
+      const enriched = await enrichAdminPosts(visiblePosts);
+      setPosts(enriched);
+      setAdminTotalPages(res.data.totalPages);
+      setAdminPageNumber(res.data.pageNumber);
+    } catch (err) {
+      console.error("Admin posts load error", err.response?.status, err.response?.data);
+      const msg =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || "Gönderiler yüklenemedi ❌";
+      toast.error(msg);
+    }
+  };
 
 
-const enrichAdminPosts = async (rawPosts) => {
-  return Promise.all(
-    (rawPosts || []).map(async (p) => {
-      const likeCount = await fetchLikeInfo(p.id);
-      const commentCount = await fetchCommentCount(p.id);
-      return { ...p, likeCount, commentCount };
-    })
-  );
-};
+  const enrichAdminPosts = async (rawPosts) => {
+    return Promise.all(
+      (rawPosts || []).map(async (p) => {
+        const likeCount = await fetchLikeInfo(p.id);
+        const commentCount = await fetchCommentCount(p.id);
+        return { ...p, likeCount, commentCount };
+      })
+    );
+  };
 
 
   const isAdmin = useMemo(() => getCurrentRoleFromToken().some(r => /admin/i.test(r)), []);
 
-const loadAdmins = async () => {
-  try {
-    setAdminsLoading(true);
-    const res = await api.get("/users/admins");
-    setAdmins(res.data || []);
-  } catch (err) {
-    console.error("Adminleri yükleme hatası:", err.response?.status, err.response?.data);
-    setAdmins([]);
-  } finally {
-    setAdminsLoading(false);
-  }
-};
+  const loadAdmins = async () => {
+    try {
+      setAdminsLoading(true);
+      const res = await api.get("/users/admins");
+      setAdmins(res.data || []);
+    } catch (err) {
+      console.error("Adminleri yükleme hatası:", err.response?.status, err.response?.data);
+      setAdmins([]);
+    } finally {
+      setAdminsLoading(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -156,37 +156,37 @@ const loadAdmins = async () => {
   }, [isAdmin, navigate]);
 
 
-useEffect(() => {
-  loadAdminPosts(adminPageNumber);
-}, [adminPageNumber]);
+  useEffect(() => {
+    loadAdminPosts(adminPageNumber);
+  }, [adminPageNumber]);
 
 
 
 
-const filteredPosts = useMemo(() => {
-  const term = search.trim().toLowerCase();
-  let filtered = (posts || []).filter(p =>
-    term ? (p.title?.toLowerCase().includes(term) || p.content?.toLowerCase().includes(term)) : true
-  );
+  const filteredPosts = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    let filtered = (posts || []).filter(p =>
+      term ? (p.title?.toLowerCase().includes(term) || p.content?.toLowerCase().includes(term)) : true
+    );
 
-  switch (adminSortBy) {
-    case "likes":
-      filtered.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-      break;
-    case "views":
-      filtered.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
-      break;
-    case "comments":
-      filtered.sort((a, b) => (b.commentCount || 0) - (a.commentCount || 0));
-      break;
-    case "date":
-    default:
-      filtered.sort((a, b) => new Date(b.createdAtUtc || b.date || 0) - new Date(a.createdAtUtc || a.date || 0));
-      break;
-  }
+    switch (adminSortBy) {
+      case "likes":
+        filtered.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+        break;
+      case "views":
+        filtered.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+        break;
+      case "comments":
+        filtered.sort((a, b) => (b.commentCount || 0) - (a.commentCount || 0));
+        break;
+      case "date":
+      default:
+        filtered.sort((a, b) => new Date(b.createdAtUtc || b.date || 0) - new Date(a.createdAtUtc || a.date || 0));
+        break;
+    }
 
-  return filtered;
-}, [posts, search, adminSortBy]);
+    return filtered;
+  }, [posts, search, adminSortBy]);
 
 
   const categoryCounts = useMemo(() => {
@@ -227,103 +227,103 @@ const filteredPosts = useMemo(() => {
       // eslint-disable-next-line no-console
       console.error("Save category error", err.response?.status, err.response?.data);
       const msg =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || "Kategori kaydedilemedi ❌";
-    toast.error(msg);
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || "Kategori kaydedilemedi ❌";
+      toast.error(msg);
     } finally {
       setCatSaving(false);
     }
   };
 
-const deleteCategory = async (id) => {
-  if (!confirm("Kategoriyi silmek istediğine emin misin?")) return;
-  try {
-    await api.delete(`/categories/${id}`);
-    setCategories(prev => prev.filter(c => c.id !== id));
-    toast.success("Kategori başarıyla silindi 🗑️");
-  } catch (err) {
-    console.error("Delete category error", err.response?.status, err.response?.data);
-    const msg =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || "Kategori silinemedi ❌";
-    toast.error(msg);
-  }
-};
+  const deleteCategory = async (id) => {
+    if (!confirm("Kategoriyi silmek istediğine emin misin?")) return;
+    try {
+      await api.delete(`/categories/${id}`);
+      setCategories(prev => prev.filter(c => c.id !== id));
+      toast.success("Kategori başarıyla silindi 🗑️");
+    } catch (err) {
+      console.error("Delete category error", err.response?.status, err.response?.data);
+      const msg =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || "Kategori silinemedi ❌";
+      toast.error(msg);
+    }
+  };
 
-const deletePost = async (id) => {
-  if (!confirm("Gönderiyi silmek istediğine emin misin?")) return;
-  try {
-    await api.delete(`/posts/${id}`);
-    await loadAdminPosts(adminPageNumber);
-    toast.success("Gönderi başarıyla silindi 🗑️");
-  } catch (err) {
-    console.error("Delete post error", err.response?.status, err.response?.data);
-    const msg =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || "Gönderi silinemedi ❌";
-    toast.error(msg);
-  }
-};
-
-
-// --- ekle ---
-const isSuperAdmin = useMemo(() => 
-  getCurrentRoleFromToken().some(r => r.toLowerCase() === "superadmin"), []
-);
-
-// --- promoteToAdmin fonksiyonunu güncelle ---
-const promoteToAdmin = async () => {
-  if (!promoteUserId.trim()) {
-    toast.warn("Kullanıcı ID girmeniz gerekiyor ⚠️");
-    return;
-  }
-  try {
-    setPromoteSaving(true);
-    await api.post(`/Auth/promote-to-admin/${promoteUserId.trim()}`);
-    toast.success("✅ Kullanıcı admin yapıldı. Rolün aktif olabilmesi için tekrar giriş yapılmalıdır.");
-    setPromoteUserId("");
-    await loadAdmins(); // listeyi yenile
-  } catch (err) {
-    console.error("Promote admin error", err.response?.status, err.response?.data);
-    const msg =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || "❌ Kullanıcı admin yapılamadı.";
-    toast.error(msg);
-  } finally {
-    setPromoteSaving(false);
-  }
-};
+  const deletePost = async (id) => {
+    if (!confirm("Gönderiyi silmek istediğine emin misin?")) return;
+    try {
+      await api.delete(`/posts/${id}`);
+      await loadAdminPosts(adminPageNumber);
+      toast.success("Gönderi başarıyla silindi 🗑️");
+    } catch (err) {
+      console.error("Delete post error", err.response?.status, err.response?.data);
+      const msg =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || "Gönderi silinemedi ❌";
+      toast.error(msg);
+    }
+  };
 
 
-// --- yeni fonksiyon: admin silme ---
-const removeAdmin = async (id) => {
-  if (!confirm("Bu kullanıcının adminliğini kaldırmak istediğinize emin misiniz?")) return;
-  try {
-    await api.delete(`/users/remove-admin/${id}`);
-    toast.success("✅ Admin rolü kaldırıldı.");
-    setAdmins(prev => prev.filter(a => a.id !== id));
-  } catch (err) {
-    console.error("Remove admin error", err.response?.status, err.response?.data);
-    const msg =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || "❌ Admin rolü kaldırılamadı.";
-    toast.error(msg);
-  }
-};
+  // --- ekle ---
+  const isSuperAdmin = useMemo(() =>
+    getCurrentRoleFromToken().some(r => r.toLowerCase() === "superadmin"), []
+  );
+
+  // --- promoteToAdmin fonksiyonunu güncelle ---
+  const promoteToAdmin = async () => {
+    if (!promoteUserId.trim()) {
+      toast.warn("Kullanıcı ID girmeniz gerekiyor ⚠️");
+      return;
+    }
+    try {
+      setPromoteSaving(true);
+      await api.post(`/Auth/promote-to-admin/${promoteUserId.trim()}`);
+      toast.success("✅ Kullanıcı admin yapıldı. Rolün aktif olabilmesi için tekrar giriş yapılmalıdır.");
+      setPromoteUserId("");
+      await loadAdmins(); // listeyi yenile
+    } catch (err) {
+      console.error("Promote admin error", err.response?.status, err.response?.data);
+      const msg =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || "❌ Kullanıcı admin yapılamadı.";
+      toast.error(msg);
+    } finally {
+      setPromoteSaving(false);
+    }
+  };
+
+
+  // --- yeni fonksiyon: admin silme ---
+  const removeAdmin = async (id) => {
+    if (!confirm("Bu kullanıcının adminliğini kaldırmak istediğinize emin misiniz?")) return;
+    try {
+      await api.delete(`/users/remove-admin/${id}`);
+      toast.success("✅ Admin rolü kaldırıldı.");
+      setAdmins(prev => prev.filter(a => a.id !== id));
+    } catch (err) {
+      console.error("Remove admin error", err.response?.status, err.response?.data);
+      const msg =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || "❌ Admin rolü kaldırılamadı.";
+      toast.error(msg);
+    }
+  };
 
 
 
-  const logout = () => { 
-  localStorage.removeItem("token"); 
-  setSearchParams({ page: "1" }); // admin sayfasını sıfırla
-  toast.info("Oturum kapatıldı 👋");
-  navigate("/login"); 
-};
+  const logout = () => {
+    localStorage.removeItem("token");
+    setSearchParams({ page: "1" }); // admin sayfasını sıfırla
+    toast.info("Oturum kapatıldı 👋");
+    navigate("/login");
+  };
 
 
   const truncateContent = (content, maxLength = 150) => {
@@ -347,7 +347,7 @@ const removeAdmin = async (id) => {
             <p style={styles.subtitle}>Kategorileri ve gönderileri yönet, kullanıcıları admin yap.</p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button style={{...styles.ghostBtn, borderColor: "rgba(255, 77, 80, 1)", color: "#f30000ff"}} onClick={() => navigate("/posts")}>Geri</button>
+            <button style={{ ...styles.ghostBtn, borderColor: "rgba(255, 77, 80, 1)", color: "#f30000ff" }} onClick={() => navigate("/posts")}>Geri</button>
           </div>
         </header>
 
@@ -356,8 +356,8 @@ const removeAdmin = async (id) => {
             <h3 style={{ margin: 0 }}>Kategoriler</h3>
           </div>
           <form onSubmit={saveCategory} style={styles.toolbar}>
-            <input style={styles.input} placeholder="Kategori adı" value={catName} onChange={(e)=>setCatName(e.target.value)} />
-            <button style={{...styles.primaryBtn, ...(catSaving ? styles.buttonDisabled : {})}} disabled={catSaving}>{editingCat ? "Güncelle" : "Ekle"}</button>
+            <input style={styles.input} placeholder="Kategori adı" value={catName} onChange={(e) => setCatName(e.target.value)} />
+            <button style={{ ...styles.primaryBtn, ...(catSaving ? styles.buttonDisabled : {}) }} disabled={catSaving}>{editingCat ? "Güncelle" : "Ekle"}</button>
             {editingCat && <button type="button" style={styles.ghostBtn} onClick={cancelEditCategory}>Vazgeç</button>}
           </form>
           <div style={styles.categoriesGrid}>
@@ -372,8 +372,8 @@ const removeAdmin = async (id) => {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <button style={styles.ghostBtn} onClick={()=>startEditCategory(c)}>Düzenle</button>
-                    <button style={{...styles.ghostBtn, color: "#ff6b6b", borderColor: "rgba(255,77,79,0.45)"}} onClick={()=>deleteCategory(c.id)}>Sil</button>
+                    <button style={styles.ghostBtn} onClick={() => startEditCategory(c)}>Düzenle</button>
+                    <button style={{ ...styles.ghostBtn, color: "#ff6b6b", borderColor: "rgba(255,77,79,0.45)" }} onClick={() => deleteCategory(c.id)}>Sil</button>
                   </div>
                 </div>
               </div>
@@ -386,22 +386,22 @@ const removeAdmin = async (id) => {
             <h3 style={{ margin: 0 }}>Gönderiler</h3>
           </div>
           <div style={styles.toolbar}>
-            <input 
-              style={styles.input} 
-              placeholder="Ara: başlık veya içerik" 
-              value={search} 
-              onChange={(e)=>setSearch(e.target.value)} 
+            <input
+              style={styles.input}
+              placeholder="Ara: başlık veya içerik"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
             <select
-      value={adminSortBy}
-      onChange={(e) => setAdminSortBy(e.target.value)}
-      style={styles.input}
-    >
-      <option value="date">Tarihe Göre (Yeni → Eski)</option>
-      <option value="likes">En Çok Beğenilen</option>
-      <option value="views">En Çok Görüntülenen</option>
-      <option value="comments">En Çok Yorum Alan</option>
-    </select>
+              value={adminSortBy}
+              onChange={(e) => setAdminSortBy(e.target.value)}
+              style={styles.input}
+            >
+              <option value="date">Tarihe Göre (Yeni → Eski)</option>
+              <option value="likes">En Çok Beğenilen</option>
+              <option value="views">En Çok Görüntülenen</option>
+              <option value="comments">En Çok Yorum Alan</option>
+            </select>
           </div>
           {(filteredPosts || []).length === 0 ? (
             <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
@@ -423,105 +423,134 @@ const removeAdmin = async (id) => {
                     </button>
                   )}
                   <div style={styles.cardFooter}>
-                    <button style={styles.ghostBtn} onClick={()=>navigate("/posts")}>Görüntüle</button>
-                    <button style={{...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b"}} onClick={()=>deletePost(p.id)}>Sil</button>
+                    <button
+                      style={styles.ghostBtn}
+                      onClick={async () => {
+                        try {
+                          // ✅ Backend'den page number al
+                          const res = await api.get(`/posts/${p.id}/pageNumber?pageSize=6`);
+                          const pageNum = res.data.pageNumber || 1;
+
+                          // ✅ Posts sayfasına highlight ile yönlendir
+                          navigate(`/posts?page=${pageNum}&highlight=${p.id}`);
+                        } catch (err) {
+                          console.error("Sayfa numarası alınamadı:", err);
+                          toast.error("Gönderi açılamadı ❌");
+                          // fallback: en azından highlight çalışsın
+                          navigate(`/posts?highlight=${p.id}`);
+                        }
+                      }}
+                    >
+                      Görüntüle
+                    </button>
+                    <button
+                      style={{
+                        ...styles.ghostBtn,
+                        borderColor: "rgba(255,77,79,0.45)",
+                        color: "#ff6b6b",
+                      }}
+                      onClick={() => deletePost(p.id)}
+                    >
+                      Sil
+                    </button>
                   </div>
+
                 </article>
               ))}
             </div>
           )}
-{adminTotalPages > 1 && (
-  <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 12 }}>
-    <button
-      style={styles.ghostBtn}
-      disabled={adminPageNumber === 1}
-      onClick={() => {
-  const newPage = adminPageNumber - 1;
-  setAdminPageNumber(newPage);
-  setSearchParams({ page: newPage.toString() });
-}}
+          {adminTotalPages > 1 && (
+            <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 12 }}>
+              <button
+                style={styles.ghostBtn}
+                disabled={adminPageNumber === 1}
+                onClick={() => {
+                  const newPage = adminPageNumber - 1;
+                  setAdminPageNumber(newPage);
+                  setSearchParams({ page: newPage.toString() });
+                }}
 
-    >
-      ← Önceki
-    </button>
+              >
+                ← Önceki
+              </button>
 
-    <span style={{ alignSelf: "center" }}>
-      {adminPageNumber} / {adminTotalPages}
-    </span>
+              <span style={{ alignSelf: "center" }}>
+                {adminPageNumber} / {adminTotalPages}
+              </span>
 
-    <button
-      style={styles.ghostBtn}
-      disabled={adminPageNumber === adminTotalPages}
-      onClick={() => {
-  const newPage = adminPageNumber + 1;
-  setAdminPageNumber(newPage);
-  setSearchParams({ page: newPage.toString() });
-}}
+              <button
+                style={styles.ghostBtn}
+                disabled={adminPageNumber === adminTotalPages}
+                onClick={() => {
+                  const newPage = adminPageNumber + 1;
+                  setAdminPageNumber(newPage);
+                  setSearchParams({ page: newPage.toString() });
+                }}
 
-    >
-      Sonraki →
-    </button>
-  </div>
-)}
+              >
+                Sonraki →
+              </button>
+            </div>
+          )}
 
         </section>
 
         {/* ✅ Yeni Admin Ekle (sadece SuperAdmin görsün) */}
-{isSuperAdmin && (
-  <section style={styles.blockCard}>
-    <div style={styles.blockHeader}>
-      <h3 style={{ margin: 0 }}>Yeni Admin Ekle</h3>
-    </div>
-    <div style={styles.toolbar}>
-      <input style={styles.input} placeholder="Kullanıcı ID (GUID)" value={promoteUserId} onChange={(e)=>setPromoteUserId(e.target.value)} />
-      <button style={{...styles.primaryBtn, ...(promoteSaving ? styles.buttonDisabled : {})}} disabled={promoteSaving} onClick={promoteToAdmin}>Admin Yap</button>
-    </div>
-  </section>
-)}
-
-{/* ✅ Mevcut Adminler (sadece SuperAdmin görsün) */}
-{isSuperAdmin && SHOW_ADMIN_LIST && (
-  <section style={styles.blockCard}>
-    <div style={styles.blockHeader}>
-      <h3 style={{ margin: 0 }}>Mevcut Adminler</h3>
-    </div>
-    {adminsLoading ? (
-      <div style={styles.emptyBox}>Adminler yükleniyor...</div>
-    ) : admins.length === 0 ? (
-      <div style={styles.emptyBox}>Henüz admin bulunmuyor.</div>
-    ) : (
-      <div style={styles.adminGrid}>
-        {admins.map((a) => (
-          <div key={a.id} style={styles.adminCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {a.avatar ? (
-                  <img src={a.avatar} alt={a.username} style={styles.adminAvatarImg} />
-                ) : (
-                  <div style={styles.adminAvatar}>
-                    {a.username
-                      ? a.username.charAt(0).toUpperCase()
-                      : (a.email ? a.email.charAt(0).toUpperCase() : "•")}
-                  </div>
-                )}
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <strong>{a.username}</strong>
-                  <span style={{ fontSize: 12, opacity: 0.8 }}>{a.email}</span>
-                </div>
-              </div>
-              <button 
-                style={{...styles.ghostBtn, color: "#ff6b6b", borderColor: "rgba(255,77,79,0.45)"}} 
-                onClick={() => removeAdmin(a.id)}
-              >
-                Adminliği Kaldır
-              </button>
+        {isSuperAdmin && (
+          <section style={styles.blockCard}>
+            <div style={styles.blockHeader}>
+              <h3 style={{ margin: 0 }}>Yeni Admin Ekle</h3>
             </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </section>
-)}
+            <div style={styles.toolbar}>
+              <input style={styles.input} placeholder="Kullanıcı ID (GUID)" value={promoteUserId} onChange={(e) => setPromoteUserId(e.target.value)} />
+              <button style={{ ...styles.primaryBtn, ...(promoteSaving ? styles.buttonDisabled : {}) }} disabled={promoteSaving} onClick={promoteToAdmin}>Admin Yap</button>
+            </div>
+          </section>
+        )}
+
+        {/* ✅ Mevcut Adminler (sadece SuperAdmin görsün) */}
+        {isSuperAdmin && SHOW_ADMIN_LIST && (
+          <section style={styles.blockCard}>
+            <div style={styles.blockHeader}>
+              <h3 style={{ margin: 0 }}>Mevcut Adminler</h3>
+            </div>
+            {adminsLoading ? (
+              <div style={styles.emptyBox}>Adminler yükleniyor...</div>
+            ) : admins.length === 0 ? (
+              <div style={styles.emptyBox}>Henüz admin bulunmuyor.</div>
+            ) : (
+              <div style={styles.adminGrid}>
+                {admins.map((a) => (
+                  <div key={a.id} style={styles.adminCard}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {a.avatar ? (
+                          <img src={a.avatar} alt={a.username} style={styles.adminAvatarImg} />
+                        ) : (
+                          <div style={styles.adminAvatar}>
+                            {a.username
+                              ? a.username.charAt(0).toUpperCase()
+                              : (a.email ? a.email.charAt(0).toUpperCase() : "•")}
+                          </div>
+                        )}
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          <strong>{a.username}</strong>
+                          <span style={{ fontSize: 12, opacity: 0.8 }}>{a.email}</span>
+                        </div>
+                      </div>
+                      <button
+                        style={{ ...styles.ghostBtn, color: "#ff6b6b", borderColor: "rgba(255,77,79,0.45)" }}
+                        onClick={() => removeAdmin(a.id)}
+                      >
+                        Adminliği Kaldır
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
       </div>
     </div>

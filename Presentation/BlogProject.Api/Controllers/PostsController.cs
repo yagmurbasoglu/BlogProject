@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using BlogProject.Application.Features.Posts.Queries;
+using BlogProject.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogProject.Api.Controllers
 {
@@ -17,11 +19,32 @@ namespace BlogProject.Api.Controllers
     public class PostsController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly AppDbContext _context;
 
-        public PostsController(IMediator mediator)
+        public PostsController(IMediator mediator, AppDbContext context)
         {
             _mediator = mediator;
+            _context = context;
         }
+
+        [HttpGet("{postId}/pageNumber")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPostPageNumber(Guid postId, int pageSize = 6)
+        {
+            var posts = await _context.Posts
+                .Where(p => !p.IsDeleted)
+                .OrderByDescending(p => p.CreatedAtUtc)
+                .Select(p => p.Id)
+                .ToListAsync();
+
+            var index = posts.FindIndex(id => id == postId);
+            if (index == -1)
+                return NotFound();
+
+            int pageNumber = (index / pageSize) + 1;
+            return Ok(new { pageNumber });
+        }
+
 
         // ✅ CREATE
         [HttpPost]

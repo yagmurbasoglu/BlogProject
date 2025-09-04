@@ -40,12 +40,14 @@ export default function Posts() {
   const [editingCommentSaving, setEditingCommentSaving] = useState(false);
   const [sortBy, setSortBy] = useState("date");
   const [searchParams, setSearchParams] = useSearchParams();
+  const highlightId = searchParams.get("highlight") || "";
   const initialPage = parseInt(searchParams.get("page") || "1", 10);
   const [pageNumber, setPageNumber] = useState(initialPage);
 
   const [totalPages, setTotalPages] = useState(1);
   const [commentPageNumber, setCommentPageNumber] = useState(1);
   const [commentTotalPages, setCommentTotalPages] = useState(1);
+
 
 
 
@@ -348,6 +350,25 @@ export default function Posts() {
         .catch(() => setComments([]));
     }
   }, [commentPageNumber, commentsOpen, commentsPost]);
+
+  useEffect(() => {
+  if (!highlightId) return;
+
+  // Render bittikten sonra elementi bul
+  const el = document.querySelector(`[data-post-id="${highlightId}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  // İstersen 3 sn sonra query’i temizle
+  const t = setTimeout(() => {
+    const sp = new URLSearchParams(searchParams);
+    sp.delete("highlight");
+    setSearchParams(sp, { replace: true });
+  }, 3000);
+
+  return () => clearTimeout(t);
+}, [highlightId, filteredPosts, searchParams, setSearchParams]);
 
 
   const openCreate = () => {
@@ -711,8 +732,10 @@ export default function Posts() {
                 return (
                   <article
                     key={post.id}
+                    data-post-id={post.id}
                     style={{
                       ...styles.card,
+                      ...(String(post.id) === String(highlightId) ? styles.highlightCard : {}),
                       ...(hoveredCard === post.id ? styles.cardHover : {})
                     }}
                     onClick={() => openDetail(post)}
@@ -1068,6 +1091,12 @@ export default function Posts() {
 }
 
 const styles = {
+  highlightCard: {
+    border: "2px solid #433ea9ff",
+    boxShadow: "0 0 0 4px rgba(100,108,255,.15)",
+    background: "#f0f2ff",
+  },
+
   pageWrapper: {
     minHeight: "100vh",
     padding: 24,
