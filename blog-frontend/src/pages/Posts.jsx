@@ -39,9 +39,9 @@ export default function Posts() {
   const [editingCommentText, setEditingCommentText] = useState("");
   const [editingCommentSaving, setEditingCommentSaving] = useState(false);
   const [sortBy, setSortBy] = useState("date");
-const [searchParams, setSearchParams] = useSearchParams();
-const initialPage = parseInt(searchParams.get("page") || "1", 10);
-const [pageNumber, setPageNumber] = useState(initialPage);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialPage = parseInt(searchParams.get("page") || "1", 10);
+  const [pageNumber, setPageNumber] = useState(initialPage);
 
   const [totalPages, setTotalPages] = useState(1);
   const [commentPageNumber, setCommentPageNumber] = useState(1);
@@ -50,12 +50,12 @@ const [pageNumber, setPageNumber] = useState(initialPage);
 
 
 
-  const handleLogout = () => { 
-  localStorage.removeItem("token"); 
-  setSearchParams({ page: "1" }); // çıkışta sıfırla
-  navigate("/login"); 
-  toast.info("Oturum kapatıldı 👋");
-};
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setSearchParams({ page: "1" }); // çıkışta sıfırla
+    navigate("/login");
+    toast.info("Oturum kapatıldı 👋");
+  };
 
 
   // Helpers
@@ -101,7 +101,7 @@ const [pageNumber, setPageNumber] = useState(initialPage);
       if (Array.isArray(claim)) arr = claim;
       else if (typeof claim === "string") arr = claim.split(/[;,\s]+/g);
       else if (typeof claim === "object" && claim != null) arr = Object.values(claim);
-      return arr.map((r)=>String(r).trim().toLowerCase()).filter(Boolean);
+      return arr.map((r) => String(r).trim().toLowerCase()).filter(Boolean);
     } catch (_) {
       return [];
     }
@@ -169,67 +169,67 @@ const [pageNumber, setPageNumber] = useState(initialPage);
     }
   };
 
-const fetchAuthors = async (posts) => {
-  try {
-    const map = {};
-    await Promise.all(
-      (posts || []).map(async (p) => {
-        const key = p && p.authorId ? String(p.authorId) : "";
-        if (!key) return;
+  const fetchAuthors = async (posts) => {
+    try {
+      const map = {};
+      await Promise.all(
+        (posts || []).map(async (p) => {
+          const key = p && p.authorId ? String(p.authorId) : "";
+          if (!key) return;
 
-        try {
-          const res = await api.get(`/users/${key}`);
-          const user = res.data;
+          try {
+            const res = await api.get(`/users/${key}`);
+            const user = res.data;
 
-          map[key] = {
-            username: user.displayName || user.userName || "Bilinmeyen Kullanıcı",
-            profileImage: user.profileImage || null,
-          };
-        } catch {
-          map[key] = { username: "Bilinmeyen Kullanıcı", profileImage: null };
-        }
-      })
-    );
-    setAuthors(map);
-  } catch (_) {}
-};
+            map[key] = {
+              username: user.displayName || user.userName || "Bilinmeyen Kullanıcı",
+              profileImage: user.profileImage || null,
+            };
+          } catch {
+            map[key] = { username: "Bilinmeyen Kullanıcı", profileImage: null };
+          }
+        })
+      );
+      setAuthors(map);
+    } catch (_) { }
+  };
 
-// ✅ Yeni ekle
-const loadPosts = async (page = pageNumber) => {
-  try {
-    setLoading(true);
-    setError("");
-    const [postsRes, catsRes] = await Promise.all([
-      api.get(`/posts/paged?pageNumber=${page}&pageSize=6`),
-      api.get("/categories"),
-    ]);
+  // ✅ Yeni ekle
+  const loadPosts = async (page = pageNumber) => {
+    try {
+      setLoading(true);
+      setError("");
+      const [postsRes, catsRes] = await Promise.all([
+        api.get(`/posts/paged?pageNumber=${page}&pageSize=6`),
+        api.get("/categories"),
+      ]);
 
-    const basePosts = (postsRes.data.items || []).filter(
-      (p) => !p.isDeleted && !p.deletedAtUtc
-    );
+      const basePosts = (postsRes.data.items || []).filter(
+        (p) => !p.isDeleted && !p.deletedAtUtc
+      );
 
-    setTotalPages(postsRes.data.totalPages);
-    setPageNumber(postsRes.data.pageNumber);
+      setTotalPages(postsRes.data.totalPages);
+      setPageNumber(postsRes.data.pageNumber);
 
-    setCategories(catsRes.data || []);
-    const decodedId = getCurrentUserIdFromToken();
-    if (decodedId) setCurrentUserId(String(decodedId));
-    if ((catsRes.data || []).length > 0) {
-      setCategoryId(String(catsRes.data[0].id));
+      setCategories(catsRes.data || []);
+      const decodedId = getCurrentUserIdFromToken();
+      if (decodedId) setCurrentUserId(String(decodedId));
+      if ((catsRes.data || []).length > 0) {
+        setCategoryId(String(catsRes.data[0].id));
+      }
+
+      const enriched = await enrichPosts(basePosts);
+      await fetchCommentCounts(enriched);
+      await fetchAuthors(enriched);
+      setPosts(enriched);
+    } catch (err) {
+      console.error("Posts load error", err.response?.status, err.response?.data);
+      setError("Veriler yüklenemedi");
+      toast.error("Gönderiler yüklenemedi ❌");
+    } finally {
+      setLoading(false);
     }
-
-    const enriched = await enrichPosts(basePosts);
-    await fetchCommentCounts(enriched);
-    await fetchAuthors(enriched);
-    setPosts(enriched);
-  } catch (err) {
-    console.error("Posts load error", err.response?.status, err.response?.data);
-    setError("Veriler yüklenemedi");
-    toast.error("Gönderiler yüklenemedi ❌");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
   const findDateField = (post) => {
@@ -252,33 +252,37 @@ const loadPosts = async (page = pageNumber) => {
     return null;
   };
 
-const formatDate = (dateString) => {
-  if (!dateString) return "";
-  try {
-    let date = new Date(dateString);
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    try {
+      let date = new Date(dateString);
 
-    // UTC → Local düzeltme (Türkiye için +3 saat)
-    date = new Date(date.getTime() + 3 * 60 * 60 * 1000);
+      // UTC → Local düzeltme (Türkiye için +3 saat)
+      date = new Date(date.getTime() + 3 * 60 * 60 * 1000);
 
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffMinutes < 1) return "Az önce";
-    if (diffHours < 1) return `${diffMinutes} dakika önce`;
-    if (diffHours < 24) return `${diffHours} saat önce`;
-    if (diffDays === 1) return "Dün";
-    if (diffDays < 7) return `${diffDays} gün önce`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} hafta önce`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} ay önce`;
+      if (diffMinutes < 1) return "Az önce";
+      if (diffHours < 1) return `${diffMinutes} dakika önce`;
+      if (diffHours < 24) return `${diffHours} saat önce`;
+      if (diffDays === 1) return "Dün";
+      if (diffDays < 7) return `${diffDays} gün önce`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} hafta önce`;
+      if (diffDays < 365) return `${Math.floor(diffDays / 30)} ay önce`;
 
-    return date.toLocaleDateString("tr-TR");
-  } catch {
-    return "";
-  }
-};
+      return date.toLocaleDateString("tr-TR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  };
 
 
 
@@ -303,7 +307,7 @@ const formatDate = (dateString) => {
       .filter((p) =>
         term ? (p.title?.toLowerCase().includes(term) || p.content?.toLowerCase().includes(term)) : true
       );
-    
+
     // Apply sorting
     switch (sortBy) {
       case "likes":
@@ -317,20 +321,20 @@ const formatDate = (dateString) => {
         break;
       case "date":
       default:
-filtered.sort((a, b) => {
-    const aDate = new Date(findDateField(a) || 0);
-    const bDate = new Date(findDateField(b) || 0);
-    return bDate - aDate; // yeni → eski
-  });
+        filtered.sort((a, b) => {
+          const aDate = new Date(findDateField(a) || 0);
+          const bDate = new Date(findDateField(b) || 0);
+          return bDate - aDate; // yeni → eski
+        });
         break;
     }
-    
+
     return filtered;
   }, [posts, selectedCategoryId, search, sortBy]);
 
-useEffect(() => {
-  loadPosts(pageNumber);
-}, [pageNumber]);
+  useEffect(() => {
+    loadPosts(pageNumber);
+  }, [pageNumber]);
 
 
   useEffect(() => {
@@ -390,66 +394,66 @@ useEffect(() => {
     setFormOpen(false);
   };
 
-const handleSave = async (e) => {
-  e.preventDefault();
-  if (!title.trim() || !content.trim() || !categoryId) return;
-  try {
-    setSaving(true);
-    setFormError("");
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!title.trim() || !content.trim() || !categoryId) return;
+    try {
+      setSaving(true);
+      setFormError("");
 
-    const payloadPascal = { Title: title.trim(), Content: content.trim(), CategoryId: String(categoryId) };
-    const send = async (payload) => {
-      if (editingPost?.id) {
-        return api.put(`/posts/${editingPost.id}`, payload);
-      }
-      return api.post("/posts", payload);
-    };
+      const payloadPascal = { Title: title.trim(), Content: content.trim(), CategoryId: String(categoryId) };
+      const send = async (payload) => {
+        if (editingPost?.id) {
+          return api.put(`/posts/${editingPost.id}`, payload);
+        }
+        return api.post("/posts", payload);
+      };
 
-    await send(payloadPascal);
+      await send(payloadPascal);
 
-    setFormOpen(false);
-    await loadPosts(pageNumber);
+      setFormOpen(false);
+      await loadPosts(pageNumber);
 
-    // ✅ Başarılı mesaj
-    toast.success(editingPost ? "Gönderi güncellendi ✅" : "Gönderi paylaşıldı 🚀");
-  } catch (err) {
-    console.error("Save post error:", err.response?.status, err.response?.data);
-    let backendMessage =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || "Gönderi kaydedilemedi.";
-    setFormError(backendMessage);
+      // ✅ Başarılı mesaj
+      toast.success(editingPost ? "Gönderi güncellendi ✅" : "Gönderi paylaşıldı 🚀");
+    } catch (err) {
+      console.error("Save post error:", err.response?.status, err.response?.data);
+      let backendMessage =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || "Gönderi kaydedilemedi.";
+      setFormError(backendMessage);
 
-    // ❌ Hata mesajı
-    toast.error(backendMessage || "Gönderi kaydedilemedi ❌");
-  } finally {
-    setSaving(false);
-  }
-};
-
-
-const handleDelete = async (postId) => {
-  if (!confirm("Bu gönderiyi silmek istediğine emin misin?")) return;
-  try {
-    await api.delete(`/posts/${postId}`);
-    await loadPosts(pageNumber);
-
-    toast.success("Gönderi silindi 🗑️");
-  } catch (err) {
-    console.error("Delete post error:", err.response?.status, err.response?.data);
-
-    let backendMessage =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
-
-    if (!backendMessage) {
-      backendMessage = "Gönderi silinemedi ❌";
+      // ❌ Hata mesajı
+      toast.error(backendMessage || "Gönderi kaydedilemedi ❌");
+    } finally {
+      setSaving(false);
     }
+  };
 
-    toast.error(String(backendMessage));
-  }
-};
+
+  const handleDelete = async (postId) => {
+    if (!confirm("Bu gönderiyi silmek istediğine emin misin?")) return;
+    try {
+      await api.delete(`/posts/${postId}`);
+      await loadPosts(pageNumber);
+
+      toast.success("Gönderi silindi 🗑️");
+    } catch (err) {
+      console.error("Delete post error:", err.response?.status, err.response?.data);
+
+      let backendMessage =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
+
+      if (!backendMessage) {
+        backendMessage = "Gönderi silinemedi ❌";
+      }
+
+      toast.error(String(backendMessage));
+    }
+  };
 
 
   const handleToggleLike = async (post) => {
@@ -468,11 +472,11 @@ const handleDelete = async (postId) => {
 
       // Update the post's like state immediately for better UX
       setPosts(prev => prev.map(p => String(p.id) === String(post.id)
-        ? { 
-            ...p, 
-            likedByCurrentUser: !currentlyLiked,
-            likeCount: currentlyLiked ? (p.likeCount || 1) - 1 : (p.likeCount || 0) + 1
-          }
+        ? {
+          ...p,
+          likedByCurrentUser: !currentlyLiked,
+          likeCount: currentlyLiked ? (p.likeCount || 1) - 1 : (p.likeCount || 0) + 1
+        }
         : p));
 
       // Fetch updated like info from server
@@ -480,13 +484,13 @@ const handleDelete = async (postId) => {
         api.get(`/PostLikes/${post.id}`).catch((e) => ({ data: [] })),
         api.get(`/PostLikes/${post.id}/isLiked`).catch((e) => ({ data: false })),
       ]);
-      
+
       let count = 0;
       const d = likesAfter.data;
       if (Array.isArray(d)) count = d.length;
       else if (Array.isArray(d?.items)) count = d.items.length;
       else if (typeof d?.count === "number") count = d.count;
-      
+
       const liked = Boolean(likedAfter.data === true || likedAfter.data?.isLiked === true);
 
       // Update with server data
@@ -521,73 +525,73 @@ const handleDelete = async (postId) => {
     }
   };
 
-const handleAddComment = async () => {
-  if (!commentText.trim() || !commentsPost) return;
-  try {
-    setCommentSaving(true);
-    setCommentError("");
+  const handleAddComment = async () => {
+    if (!commentText.trim() || !commentsPost) return;
+    try {
+      setCommentSaving(true);
+      setCommentError("");
 
-    await api.post(`/Comments`, { 
-      postId: String(commentsPost.id), 
-      authorId: currentUserId, 
-      content: commentText.trim() 
-    });
+      await api.post(`/Comments`, {
+        postId: String(commentsPost.id),
+        authorId: currentUserId,
+        content: commentText.trim()
+      });
 
-    const res = await api.get(`/Comments/${commentsPost.id}`);
-    setComments(res.data || []);
-    const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
-    setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
-    setCommentText("");
-
-    // ✅ Başarılı mesaj
-    toast.success("Yorum eklendi 💬");
-  } catch (err) {
-    console.error("Add comment error:", err.response?.status, err.response?.data);
-    const backendMessage = typeof err.response?.data === "string" 
-      ? err.response.data 
-      : (err.response?.data?.message || "Yorum eklenemedi.");
-    setCommentError(backendMessage);
-
-    // ❌ Hata mesajı
-    toast.error(backendMessage || "Yorum eklenemedi ❌");
-  } finally {
-    setCommentSaving(false);
-  }
-};
-
-
-const handleDeleteComment = async (commentId) => {
-  try {
-    await api.delete(`/Comments/${commentId}`);
-    if (commentsPost) {
       const res = await api.get(`/Comments/${commentsPost.id}`);
       setComments(res.data || []);
-      const count = Array.isArray(res.data)
-        ? res.data.length
-        : (Array.isArray(res.data?.items)
+      const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
+      setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+      setCommentText("");
+
+      // ✅ Başarılı mesaj
+      toast.success("Yorum eklendi 💬");
+    } catch (err) {
+      console.error("Add comment error:", err.response?.status, err.response?.data);
+      const backendMessage = typeof err.response?.data === "string"
+        ? err.response.data
+        : (err.response?.data?.message || "Yorum eklenemedi.");
+      setCommentError(backendMessage);
+
+      // ❌ Hata mesajı
+      toast.error(backendMessage || "Yorum eklenemedi ❌");
+    } finally {
+      setCommentSaving(false);
+    }
+  };
+
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await api.delete(`/Comments/${commentId}`);
+      if (commentsPost) {
+        const res = await api.get(`/Comments/${commentsPost.id}`);
+        setComments(res.data || []);
+        const count = Array.isArray(res.data)
+          ? res.data.length
+          : (Array.isArray(res.data?.items)
             ? res.data.items.length
             : (typeof res.data?.count === "number" ? res.data.count : 0));
-      setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+        setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+      }
+
+      // ✅ Başarı mesajı
+      toast.success("Yorum silindi 🗑️");
+    } catch (err) {
+      console.error("Delete comment error:", err.response?.status, err.response?.data);
+
+      let backendMessage =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
+
+      if (!backendMessage) {
+        backendMessage = "Yorum silinemedi ❌";
+      }
+
+      // ❌ Hata mesajı
+      toast.error(backendMessage);
     }
-
-    // ✅ Başarı mesajı
-    toast.success("Yorum silindi 🗑️");
-  } catch (err) {
-    console.error("Delete comment error:", err.response?.status, err.response?.data);
-
-    let backendMessage =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
-
-    if (!backendMessage) {
-      backendMessage = "Yorum silinemedi ❌";
-    }
-
-    // ❌ Hata mesajı
-    toast.error(backendMessage);
-  }
-};
+  };
 
 
   const startEditComment = (comment) => {
@@ -601,46 +605,46 @@ const handleDeleteComment = async (commentId) => {
     setEditingCommentText("");
   };
 
-const handleUpdateComment = async () => {
-  if (!editingCommentId || !editingCommentText.trim()) return;
-  try {
-    setEditingCommentSaving(true);
-    setCommentError("");
-    await api.put(`/Comments/${editingCommentId}`, { content: editingCommentText.trim() });
-    if (commentsPost) {
-      const res = await api.get(`/Comments/${commentsPost.id}`);
-      setComments(res.data || []);
-      const count = Array.isArray(res.data)
-        ? res.data.length
-        : (Array.isArray(res.data?.items)
+  const handleUpdateComment = async () => {
+    if (!editingCommentId || !editingCommentText.trim()) return;
+    try {
+      setEditingCommentSaving(true);
+      setCommentError("");
+      await api.put(`/Comments/${editingCommentId}`, { content: editingCommentText.trim() });
+      if (commentsPost) {
+        const res = await api.get(`/Comments/${commentsPost.id}`);
+        setComments(res.data || []);
+        const count = Array.isArray(res.data)
+          ? res.data.length
+          : (Array.isArray(res.data?.items)
             ? res.data.items.length
             : (typeof res.data?.count === "number" ? res.data.count : 0));
-      setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+        setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+      }
+      setEditingCommentId(null);
+      setEditingCommentText("");
+
+      // ✅ Başarı mesajı
+      toast.success("Yorum güncellendi ✏️");
+    } catch (err) {
+      console.error("Update comment error:", err.response?.status, err.response?.data);
+
+      let backendMessage =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
+
+      if (!backendMessage) {
+        backendMessage = "Yorum güncellenemedi ❌";
+      }
+
+      setCommentError(backendMessage);
+      // ❌ Toast hata bildirimi
+      toast.error(backendMessage);
+    } finally {
+      setEditingCommentSaving(false);
     }
-    setEditingCommentId(null);
-    setEditingCommentText("");
-
-    // ✅ Başarı mesajı
-    toast.success("Yorum güncellendi ✏️");
-  } catch (err) {
-    console.error("Update comment error:", err.response?.status, err.response?.data);
-
-    let backendMessage =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
-
-    if (!backendMessage) {
-      backendMessage = "Yorum güncellenemedi ❌";
-    }
-
-    setCommentError(backendMessage);
-    // ❌ Toast hata bildirimi
-    toast.error(backendMessage);
-  } finally {
-    setEditingCommentSaving(false);
-  }
-};
+  };
 
 
   if (loading) return <div style={styles.centerWrap}><p>Yükleniyor...</p></div>;
@@ -648,55 +652,185 @@ const handleUpdateComment = async () => {
 
   return (
     <>
-    <div style={styles.pageWrapper}>
-      <div style={styles.container}>
-        <header style={styles.header}>
-          <div>
-            <h2 style={styles.title}>Blog Gönderileri</h2>
-            <p style={styles.subtitle}>Kategorilere göre keşfet, paylaş ve düzenle.</p>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            {isAdmin && (
-              <button style={styles.ghostBtn} onClick={() => navigate("/admin")}>Yönetim</button>
-            )}
-            <button style={styles.ghostBtn} onClick={handleLogout}>Çıkış</button>
-            <button style={styles.primaryBtn} onClick={openCreate}>Yeni Gönderi</button>
-          </div>
-        </header>
+      <div style={styles.pageWrapper}>
+        <div style={styles.container}>
+          <header style={styles.header}>
+            <div>
+              <h2 style={styles.title}>Blog Gönderileri</h2>
+              <p style={styles.subtitle}>Kategorilere göre keşfet, paylaş ve düzenle.</p>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button style={styles.primaryBtn} onClick={openCreate}>Yeni Gönderi</button>
+            </div>
+          </header>
 
-        <div style={styles.toolbar}>
-          <div style={styles.selectWrap}>
-            <select
-              value={selectedCategoryId}
-              onChange={(e) => setSelectedCategoryId(e.target.value)}
-              style={styles.select}
-            >
-              <option value="all">Tümü</option>
-              {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>{c.name}</option>
-              ))}
-            </select>
+          <div style={styles.toolbar}>
+            <div style={styles.selectWrap}>
+              <select
+                value={selectedCategoryId}
+                onChange={(e) => setSelectedCategoryId(e.target.value)}
+                style={styles.select}
+              >
+                <option value="all">Tümü</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={styles.selectWrap}>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={styles.select}
+              >
+                <option value="date">Tarihe Göre (Yeniden → Eskiye)</option>
+                <option value="likes">En Çok Beğenilen</option>
+                <option value="views">En Çok Görüntülenen</option>
+                <option value="comments">En Çok Yorumlu</option>
+              </select>
+            </div>
+
+            <input
+              placeholder="Ara: başlık veya içerik"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={styles.search}
+            />
           </div>
 
-          <div style={styles.selectWrap}>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={styles.select}
-            >
-              <option value="date">Tarihe Göre (Yeniden → Eskiye)</option>
-              <option value="likes">En Çok Beğenilen</option>
-              <option value="views">En Çok Görüntülenen</option>
-              <option value="comments">En Çok Yorumlu</option>
-            </select>
-          </div>
+          {filteredPosts.length === 0 ? (
+            <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
+          ) : (
+            <div style={styles.grid}>
+              {filteredPosts.map((post) => {
+                const isOwner = currentUserId && String(post.authorId) === String(currentUserId);
+                const likeCount = post.likeCount ?? 0;
+                const userLiked = Boolean(post.likedByCurrentUser);
 
-          <input
-            placeholder="Ara: başlık veya içerik"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={styles.search}
-          />
+                return (
+                  <article
+                    key={post.id}
+                    style={{
+                      ...styles.card,
+                      ...(hoveredCard === post.id ? styles.cardHover : {})
+                    }}
+                    onClick={() => openDetail(post)}
+                    onMouseEnter={() => setHoveredCard(post.id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                  >
+                    <div style={styles.cardHeader}>
+                      <div style={styles.authorInfo}>
+                        <div style={styles.authorAvatar}>
+                          {authors[String(post.authorId)]?.profileImage ? (
+                            <img
+                              src={authors[String(post.authorId)].profileImage}
+                              alt="Profil"
+                              style={styles.avatarImage}
+                            />
+                          ) : (
+                            <div style={styles.avatarPlaceholder}>
+                              {authors[String(post.authorId)]?.username?.charAt(0)?.toUpperCase() || "?"}
+                            </div>
+                          )}
+                        </div>
+                        <div style={styles.authorDetails}>
+                          <span style={styles.authorName}>
+                            {authors[String(post.authorId)]?.username || "Bilinmeyen Kullanıcı"}
+                          </span>
+                          <span style={styles.postDate}>
+                            {(() => {
+                              const raw = findDateField(post);
+                              const display = raw ? formatDate(raw) : "";
+                              return display;
+                            })()}
+                            {(() => {
+                              const createdRaw = findDateField(post);
+                              const updatedRaw = post.updatedAt || post.updatedDate || post.dateUpdated || post.DateUpdated;
+                              if (!createdRaw || !updatedRaw) return null;
+                              if (String(updatedRaw) !== String(createdRaw)) {
+                                return <span style={styles.updatedBadge}> • Güncellendi</span>;
+                              }
+                              return null;
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                      <span style={styles.badge}>{categories.find(c => String(c.id) === String(post.categoryId))?.name || "Kategori"}</span>
+                    </div>
+                    <h3 style={styles.postTitle}>{post.title}</h3>
+                    <p style={styles.postContent}>
+                      {expandedPosts[post.id] ? post.content : truncateContent(post.content)}
+                    </p>
+                    {post.content && post.content.length > 150 && (
+                      <button
+                        style={styles.readMoreBtn}
+                        onClick={(e) => { e.stopPropagation(); togglePostExpansion(post.id); }}
+                      >
+                        {expandedPosts[post.id] ? "Daha az göster" : "Devamını oku"}
+                      </button>
+                    )}
+                    <div style={styles.metaRow}>
+                      <span title="Görüntülenme">👁️ {post.viewCount ?? 0}</span>
+                    </div>
+                    <div style={styles.cardFooter}>
+                      <button
+                        style={{
+                          ...styles.likeBtn,
+                          ...(userLiked ? {
+                            background: "#ff6b6b",
+                            borderColor: "#ff6b6b",
+                            color: "white"
+                          } : {}),
+                          ...(hoveredCard === post.id ? styles.likeBtnHover : {})
+                        }}
+                        onClick={(e) => { e.stopPropagation(); handleToggleLike(post); }}
+                        aria-pressed={userLiked}
+                      >
+                        {userLiked ? "❤️" : "🤍"} {likeCount}
+                      </button>
+                      <button
+                        style={{
+                          ...styles.ghostBtn,
+                          marginLeft: 8,
+                          ...(hoveredCard === post.id ? styles.ghostBtnHover : {})
+                        }}
+                        onClick={(e) => { e.stopPropagation(); openComments(post); }}
+                      >
+                        Yorum {commentCounts[String(post.id)] != null ? commentCounts[String(post.id)] : ""}
+                      </button>
+                      {isOwner && (
+                        <>
+                          <button
+                            style={{
+                              ...styles.ghostBtn,
+                              marginLeft: 8,
+                              ...(hoveredCard === post.id ? styles.ghostBtnHover : {})
+                            }}
+                            onClick={(e) => { e.stopPropagation(); openEdit(post); }}
+                          >
+                            Düzenle
+                          </button>
+                          <button
+                            style={{
+                              ...styles.ghostBtn,
+                              marginLeft: 8,
+                              borderColor: "rgba(255,77,79,0.45)",
+                              color: "#ff6b6b",
+                              ...(hoveredCard === post.id ? styles.ghostBtnHover : {})
+                            }}
+                            onClick={(e) => { e.stopPropagation(); handleDelete(post.id); }}
+                          >
+                            Sil
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {filteredPosts.length === 0 ? (
@@ -704,360 +838,231 @@ const handleUpdateComment = async () => {
         ) : (
           <div style={styles.grid}>
             {filteredPosts.map((post) => {
-              const isOwner = currentUserId && String(post.authorId) === String(currentUserId);
-              const likeCount = post.likeCount ?? 0;
-              const userLiked = Boolean(post.likedByCurrentUser);
-
-              return (
-              <article 
-                key={post.id} 
-                style={{
-                  ...styles.card,
-                  ...(hoveredCard === post.id ? styles.cardHover : {})
-                }}
-                onClick={() => openDetail(post)}
-                onMouseEnter={() => setHoveredCard(post.id)}
-                onMouseLeave={() => setHoveredCard(null)}
-              >
-                <div style={styles.cardHeader}>
-                  <div style={styles.authorInfo}>
-                    <div style={styles.authorAvatar}>
-                      {authors[String(post.authorId)]?.profileImage ? (
-                        <img 
-                          src={authors[String(post.authorId)].profileImage} 
-                          alt="Profil" 
-                          style={styles.avatarImage}
-                        />
-                      ) : (
-                        <div style={styles.avatarPlaceholder}>
-                          {authors[String(post.authorId)]?.username?.charAt(0)?.toUpperCase() || "?"}
-                        </div>
-                      )}
-                    </div>
-                    <div style={styles.authorDetails}>
-                      <span style={styles.authorName}>
-                        {authors[String(post.authorId)]?.username || "Bilinmeyen Kullanıcı"}
-                      </span>
-                      <span style={styles.postDate}>
-                        {(() => {
-                          const raw = findDateField(post);
-                          const display = raw ? formatDate(raw) : "";
-                          return display;
-                        })()}
-                        {(() => {
-                          const createdRaw = findDateField(post);
-                          const updatedRaw = post.updatedAt || post.updatedDate || post.dateUpdated || post.DateUpdated;
-                          if (!createdRaw || !updatedRaw) return null;
-                          if (String(updatedRaw) !== String(createdRaw)) {
-                            return <span style={styles.updatedBadge}> • Güncellendi</span>;
-                          }
-                          return null;
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-                  <span style={styles.badge}>{categories.find(c => String(c.id) === String(post.categoryId))?.name || "Kategori"}</span>
-                </div>
-                <h3 style={styles.postTitle}>{post.title}</h3>
-                <p style={styles.postContent}>
-                  {expandedPosts[post.id] ? post.content : truncateContent(post.content)}
-                </p>
-                {post.content && post.content.length > 150 && (
-                  <button 
-                    style={styles.readMoreBtn}
-                    onClick={(e) => { e.stopPropagation(); togglePostExpansion(post.id); }}
-                  >
-                    {expandedPosts[post.id] ? "Daha az göster" : "Devamını oku"}
-                  </button>
-                )}
-                <div style={styles.metaRow}>
-                  <span title="Görüntülenme">👁️ {post.viewCount ?? 0}</span>
-                </div>
-                <div style={styles.cardFooter}>
-                  <button
-                    style={{
-                      ...styles.likeBtn,
-                      ...(userLiked ? {
-                        background: "#ff6b6b",
-                        borderColor: "#ff6b6b",
-                        color: "white"
-                      } : {}),
-                      ...(hoveredCard === post.id ? styles.likeBtnHover : {})
-                    }}
-                    onClick={(e) => { e.stopPropagation(); handleToggleLike(post); }}
-                    aria-pressed={userLiked}
-                  >
-                    {userLiked ? "❤️" : "🤍"} {likeCount}
-                  </button>
-                  <button 
-                    style={{
-                      ...styles.ghostBtn,
-                      marginLeft: 8,
-                      ...(hoveredCard === post.id ? styles.ghostBtnHover : {})
-                    }}
-                    onClick={(e)=>{e.stopPropagation(); openComments(post);}}
-                  >
-                    Yorum {commentCounts[String(post.id)] != null ? commentCounts[String(post.id)] : ""}
-                  </button>
-                  {isOwner && (
-                    <>
-                      <button 
-                        style={{
-                          ...styles.ghostBtn, 
-                          marginLeft: 8,
-                          ...(hoveredCard === post.id ? styles.ghostBtnHover : {})
-                        }} 
-                        onClick={(e)=>{e.stopPropagation(); openEdit(post);}}
-                      >
-                        Düzenle
-                      </button>
-                      <button 
-                        style={{
-                          ...styles.ghostBtn, 
-                          marginLeft: 8, 
-                          borderColor: "rgba(255,77,79,0.45)", 
-                          color: "#ff6b6b",
-                          ...(hoveredCard === post.id ? styles.ghostBtnHover : {})
-                        }} 
-                        onClick={(e)=>{e.stopPropagation(); handleDelete(post.id);}}
-                      >
-                        Sil
-                      </button>
-                    </>
-                  )}
-                </div>
-              </article>
-              );
+              // ... kart renderı
             })}
           </div>
         )}
-      </div>
 
-      {filteredPosts.length === 0 ? (
-  <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
-) : (
-  <div style={styles.grid}>
-    {filteredPosts.map((post) => {
-      // ... kart renderı
-    })}
-  </div>
-)}
-
-{totalPages > 1 && (
-  <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 12 }}>
-    <button
-      style={styles.ghostBtn}
-      disabled={pageNumber === 1}
-      onClick={() => {
-  const newPage = pageNumber - 1;
-  setPageNumber(newPage);
-  setSearchParams({ page: newPage.toString() });
-}}
-
-    >
-      ← Önceki
-    </button>
-
-    <span style={{ alignSelf: "center" }}>
-      {pageNumber} / {totalPages}
-    </span>
-
-    <button
-      style={styles.ghostBtn}
-      disabled={pageNumber === totalPages}
-      onClick={() => {
-  const newPage = pageNumber + 1;
-  setPageNumber(newPage);
-  setSearchParams({ page: newPage.toString() });
-}}
-
-    >
-      Sonraki →
-    </button>
-  </div>
-)}
-
-      {formOpen && (
-        <div style={styles.modalOverlay} onClick={closeForm}>
-          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h3 style={{ margin: 0 }}>{editingPost ? "Gönderiyi Düzenle" : "Yeni Gönderi"}</h3>
-            </div>
-            <form onSubmit={handleSave} style={styles.modalForm}>
-              <div style={styles.fieldGroup}>
-                <label style={styles.label}>Kategori</label>
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  style={styles.select}
-                >
-                  {categories.map((c) => (
-                    <option key={c.id} value={String(c.id)}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={styles.fieldGroup}>
-                <label style={styles.label}>Başlık</label>
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Gönderi başlığı"
-                  style={styles.input}
-                />
-              </div>
-
-              <div style={styles.fieldGroup}>
-                <label style={styles.label}>İçerik</label>
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Gönderi içeriği"
-                  style={styles.textarea}
-                  rows={6}
-                />
-              </div>
-              {formError && (
-                <div style={styles.errorBox}>{formError}</div>
-              )}
-              <div style={styles.modalActions}>
-                <button type="button" style={styles.ghostBtn} onClick={closeForm}>Vazgeç</button>
-                <button type="submit" style={{
-                  ...styles.primaryBtn,
-                  ...(saving ? styles.buttonDisabled : {}),
-                }} disabled={saving}>
-                  {saving ? "Kaydediliyor..." : (editingPost ? "Güncelle" : "Paylaş")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {detailOpen && detailPost && (
-        <div style={styles.modalOverlay} onClick={()=>setDetailOpen(false)}>
-          <div style={styles.modalCard} onClick={(e)=>e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h3 style={{ margin: 0 }}>{detailPost.title}</h3>
-            </div>
-            <div style={{ padding: 16 }}>
-              <div style={{ marginBottom: 8, display: "flex", gap: 12, alignItems: "center" }}>
-                <span style={styles.badge}>{categories.find(c => String(c.id) === String(detailPost.categoryId))?.name || "Kategori"}</span>
-                <span>👁️ {detailPost.viewCount ?? 0}</span>
-              </div>
-              <p style={{ marginTop: 0, whiteSpace: "pre-wrap" }}>{detailPost.content}</p>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
-                {currentUserId && String(detailPost.authorId) === String(currentUserId) && (
-                  <>
-                    <button style={styles.ghostBtn} onClick={()=>{ setDetailOpen(false); openEdit(detailPost); }}>Düzenle</button>
-                    <button style={{...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b"}} onClick={()=> handleDelete(detailPost.id)}>Sil</button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {commentsOpen && commentsPost && (
-        <div style={styles.modalOverlay} onClick={()=>setCommentsOpen(false)}>
-          <div style={styles.modalCard} onClick={(e)=>e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h3 style={{ margin: 0 }}>Yorumlar</h3>
-            </div>
-            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-              <div>
-                {(comments || []).length === 0 ? (
-                  <div style={styles.emptyBox}>Henüz yorum yok.</div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {comments.map((c) => (
-                      <div key={c.id} style={{
-                        border: "1px solid rgba(255,255,255,0.18)",
-                        borderRadius: 10,
-                        padding: 10,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 8,
-                      }}>
-                        {editingCommentId === c.id ? (
-                          <input
-                            style={{...styles.input, flex: 1}}
-                            value={editingCommentText}
-                            onChange={(e)=>setEditingCommentText(e.target.value)}
-                          />
-                        ) : (
-                          <span style={{ whiteSpace: "pre-wrap" }}>{c.content || c.text}</span>
-                        )}
-                        {(currentUserId && String(c.userId || c.authorId) === String(currentUserId)) && (
-                          <div style={{ display: "flex", gap: 6 }}>
-                            {editingCommentId === c.id ? (
-                              <>
-                                <button
-                                  style={{...styles.primaryBtn, ...(editingCommentSaving ? styles.buttonDisabled : {})}}
-                                  disabled={editingCommentSaving || !editingCommentText.trim()}
-                                  onClick={handleUpdateComment}
-                                >Kaydet</button>
-                                <button style={styles.ghostBtn} onClick={cancelEditComment}>Vazgeç</button>
-                              </>
-                            ) : (
-                              <>
-                                <button style={styles.ghostBtn} onClick={()=>startEditComment(c)}>Düzenle</button>
-                                <button style={{...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b"}} onClick={async()=>{ await handleDeleteComment(c.id); }}>Sil</button>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-{commentTotalPages > 1 && (
-          <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12 }}>
+        {totalPages > 1 && (
+          <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 12 }}>
             <button
-              style={styles.ghostBtn}
-              disabled={commentPageNumber === 1}
-              onClick={() => setCommentPageNumber(commentPageNumber - 1)}
+              style={{
+                ...styles.paginationBtn,
+                ...(pageNumber === 1 ? styles.paginationBtnDisabled : {}),
+              }}
+              disabled={pageNumber === 1}
+              onClick={() => {
+                const newPage = pageNumber - 1;
+                setPageNumber(newPage);
+                setSearchParams({ page: newPage.toString() });
+              }}
             >
               ← Önceki
             </button>
 
-            <span style={{ alignSelf: "center" }}>
-              {commentPageNumber} / {commentTotalPages}
+            <span style={{ alignSelf: "center", fontWeight: 500 }}>
+              {pageNumber} / {totalPages}
             </span>
 
             <button
-              style={styles.ghostBtn}
-              disabled={commentPageNumber === commentTotalPages}
-              onClick={() => setCommentPageNumber(commentPageNumber + 1)}
+              style={{
+                ...styles.paginationBtn,
+                ...(pageNumber === totalPages ? styles.paginationBtnDisabled : {}),
+              }}
+              disabled={pageNumber === totalPages}
+              onClick={() => {
+                const newPage = pageNumber + 1;
+                setPageNumber(newPage);
+                setSearchParams({ page: newPage.toString() });
+              }}
             >
               Sonraki →
             </button>
+
           </div>
         )}
 
+        {formOpen && (
+          <div style={styles.modalOverlay} onClick={closeForm}>
+            <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <h3 style={{ margin: 0 }}>{editingPost ? "Gönderiyi Düzenle" : "Yeni Gönderi"}</h3>
+              </div>
+              <form onSubmit={handleSave} style={styles.modalForm}>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Kategori</label>
+                  <select
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                    style={styles.select}
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={String(c.id)}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {commentError && <div style={styles.errorBox}>{commentError}</div>}
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  style={{...styles.input, flex: 1}}
-                  placeholder="Yorum yaz..."
-                  value={commentText}
-                  onChange={(e)=>setCommentText(e.target.value)}
-                />
-                <button
-                  style={{...styles.primaryBtn, ...(commentSaving ? styles.buttonDisabled : {})}}
-                  disabled={commentSaving || !commentText.trim()}
-                  onClick={handleAddComment}
-                >Gönder</button>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Başlık</label>
+                  <input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Gönderi başlığı"
+                    style={styles.input}
+                  />
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>İçerik</label>
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Gönderi içeriği"
+                    style={styles.textarea}
+                    rows={6}
+                  />
+                </div>
+                {formError && (
+                  <div style={styles.errorBox}>{formError}</div>
+                )}
+                <div style={styles.modalActions}>
+                  <button type="button" style={styles.ghostBtn} onClick={closeForm}>Vazgeç</button>
+                  <button type="submit" style={{
+                    ...styles.primaryBtn,
+                    ...(saving ? styles.buttonDisabled : {}),
+                  }} disabled={saving}>
+                    {saving ? "Kaydediliyor..." : (editingPost ? "Güncelle" : "Paylaş")}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {detailOpen && detailPost && (
+          <div style={styles.modalOverlay} onClick={() => setDetailOpen(false)}>
+            <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <h3 style={{ margin: 0 }}>{detailPost.title}</h3>
+              </div>
+              <div style={{ padding: 16 }}>
+                <div style={{ marginBottom: 8, display: "flex", gap: 12, alignItems: "center" }}>
+                  <span style={styles.badge}>{categories.find(c => String(c.id) === String(detailPost.categoryId))?.name || "Kategori"}</span>
+                  <span>👁️ {detailPost.viewCount ?? 0}</span>
+                </div>
+                <p style={{ marginTop: 0, whiteSpace: "pre-wrap" }}>{detailPost.content}</p>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+                  {currentUserId && String(detailPost.authorId) === String(currentUserId) && (
+                    <>
+                      <button style={styles.ghostBtn} onClick={() => { setDetailOpen(false); openEdit(detailPost); }}>Düzenle</button>
+                      <button style={{ ...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b" }} onClick={() => handleDelete(detailPost.id)}>Sil</button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {commentsOpen && commentsPost && (
+          <div style={styles.modalOverlay} onClick={() => setCommentsOpen(false)}>
+            <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <h3 style={{ margin: 0 }}>Yorumlar</h3>
+              </div>
+              <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div>
+                  {(comments || []).length === 0 ? (
+                    <div style={styles.emptyBox}>Henüz yorum yok.</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {comments.map((c) => (
+                        <div key={c.id} style={{
+                          border: "1px solid rgba(255,255,255,0.18)",
+                          borderRadius: 10,
+                          padding: 10,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 8,
+                        }}>
+                          {editingCommentId === c.id ? (
+                            <input
+                              style={{ ...styles.input, flex: 1 }}
+                              value={editingCommentText}
+                              onChange={(e) => setEditingCommentText(e.target.value)}
+                            />
+                          ) : (
+                            <span style={{ whiteSpace: "pre-wrap" }}>{c.content || c.text}</span>
+                          )}
+                          {(currentUserId && String(c.userId || c.authorId) === String(currentUserId)) && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                              {editingCommentId === c.id ? (
+                                <>
+                                  <button
+                                    style={{ ...styles.primaryBtn, ...(editingCommentSaving ? styles.buttonDisabled : {}) }}
+                                    disabled={editingCommentSaving || !editingCommentText.trim()}
+                                    onClick={handleUpdateComment}
+                                  >Kaydet</button>
+                                  <button style={styles.ghostBtn} onClick={cancelEditComment}>Vazgeç</button>
+                                </>
+                              ) : (
+                                <>
+                                  <button style={styles.ghostBtn} onClick={() => startEditComment(c)}>Düzenle</button>
+                                  <button style={{ ...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b" }} onClick={async () => { await handleDeleteComment(c.id); }}>Sil</button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {commentTotalPages > 1 && (
+                  <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12 }}>
+                    <button
+                      style={styles.ghostBtn}
+                      disabled={commentPageNumber === 1}
+                      onClick={() => setCommentPageNumber(commentPageNumber - 1)}
+                    >
+                      ← Önceki
+                    </button>
+
+                    <span style={{ alignSelf: "center" }}>
+                      {commentPageNumber} / {commentTotalPages}
+                    </span>
+
+                    <button
+                      style={styles.ghostBtn}
+                      disabled={commentPageNumber === commentTotalPages}
+                      onClick={() => setCommentPageNumber(commentPageNumber + 1)}
+                    >
+                      Sonraki →
+                    </button>
+                  </div>
+                )}
+
+
+                {commentError && <div style={styles.errorBox}>{commentError}</div>}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    style={{ ...styles.input, flex: 1 }}
+                    placeholder="Yorum yaz..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                  />
+                  <button
+                    style={{ ...styles.primaryBtn, ...(commentSaving ? styles.buttonDisabled : {}) }}
+                    disabled={commentSaving || !commentText.trim()}
+                    onClick={handleAddComment}
+                  >Gönder</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }
@@ -1128,9 +1133,11 @@ const styles = {
     cursor: "pointer",
   },
   cardHover: {
-    transform: "translateY(-4px) scale(1.02)",
-    boxShadow: "0 20px 40px rgba(0,0,0,0.3), 0 8px 16px rgba(100,108,255,0.2)",
-    border: "1px solid rgba(100,108,255,0.3)",
+    transform: "translateY(-3px) scale(1.015)",
+    boxShadow:
+      "0 18px 36px rgba(0,0,0,0.28), 0 8px 16px rgba(100,108,255,0.18)",
+    border: "1px solid rgba(100,108,255,0.35)",
+    background: "rgba(255,255,255,0.08)", // çok hafif aydınlat
   },
   cardHeader: { display: "flex", justifyContent: "space-between", alignItems: "center" },
   badge: {
@@ -1315,4 +1322,23 @@ const styles = {
     transform: "translateY(-1px)",
     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
   },
+  paginationBtn: {
+    padding: "8px 14px",
+    borderRadius: "8px",
+    border: "1px solid #ddd",
+    background: "white",
+    color: "#333",
+    cursor: "pointer",
+    fontSize: 14,
+    transition: "all 0.2s ease",
+  },
+  paginationBtnHover: {
+    background: "#f3f4f6",
+    borderColor: "#ccc",
+  },
+  paginationBtnDisabled: {
+    opacity: 0.5,
+    cursor: "not-allowed",
+  },
+
 };

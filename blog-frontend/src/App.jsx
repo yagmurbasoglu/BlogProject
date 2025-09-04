@@ -1,10 +1,10 @@
-// App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Posts from "./pages/Posts";
 import Admin from "./pages/Admin";
-import { ToastContainer } from "react-toastify"; // ✅ Sadece component
+import { ToastContainer } from "react-toastify";
+import Layout from "./components/Layout"; // ✅
 
 function App() {
   return (
@@ -13,22 +13,15 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/posts" element={<Posts />} />
-        <Route path="/admin" element={<Admin />} />
+
+        {/* ✅ Layout kullanılan kısım */}
+        <Route element={<Layout />}>
+          <Route path="/posts" element={<Posts />} />
+          <Route path="/admin" element={<Admin />} />
+        </Route>
       </Routes>
 
-      {/* ✅ Bir kere, en altta/üstte olabilir; Routes'ın kardeşi olarak */}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnFocusLoss={false}
-        draggable
-        pauseOnHover
-        theme="colored"  // İstersen "light"/"dark"
-      />
+      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
     </>
   );
 }
