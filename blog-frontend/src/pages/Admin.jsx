@@ -118,7 +118,6 @@ const loadAdmins = async () => {
   } catch (err) {
     console.error("Adminleri yükleme hatası:", err.response?.status, err.response?.data);
     setAdmins([]);
-    toast.error("Adminler yüklenemedi ❌");
   } finally {
     setAdminsLoading(false);
   }
@@ -348,8 +347,7 @@ const removeAdmin = async (id) => {
             <p style={styles.subtitle}>Kategorileri ve gönderileri yönet, kullanıcıları admin yap.</p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button style={styles.ghostBtn} onClick={() => navigate("/posts")}>Geri</button>
-            <button style={{...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b"}} onClick={logout}>Çıkış</button>
+            <button style={{...styles.ghostBtn, borderColor: "rgba(255, 77, 80, 1)", color: "#f30000ff"}} onClick={() => navigate("/posts")}>Geri</button>
           </div>
         </header>
 
