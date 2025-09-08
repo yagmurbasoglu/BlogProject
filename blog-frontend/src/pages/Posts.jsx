@@ -669,7 +669,34 @@ export default function Posts() {
   };
 
 
-  if (loading) return <div style={styles.centerWrap}><p>Yükleniyor...</p></div>;
+if (loading) {
+  return (
+    <div style={styles.pageWrapper}>
+      <div style={styles.container}>
+        <header style={styles.header}>
+          <div>
+            <div className="skeleton" style={{ width: 200, height: 24, marginBottom: 8 }} />
+            <div className="skeleton" style={{ width: 300, height: 16 }} />
+          </div>
+          <div className="skeleton" style={{ width: 120, height: 40, borderRadius: 10 }} />
+        </header>
+
+        <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+          <div className="skeleton" style={{ width: 180, height: 40, borderRadius: 10 }} />
+          <div className="skeleton" style={{ width: 180, height: 40, borderRadius: 10 }} />
+          <div className="skeleton" style={{ flex: 1, height: 40, borderRadius: 10 }} />
+        </div>
+
+        <div style={styles.grid}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton" style={{ height: 180 }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
   if (error) return <div style={styles.centerWrap}><p style={{ color: "#ff6b6b" }}>{error}</p></div>;
 
   return (
