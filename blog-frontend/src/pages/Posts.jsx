@@ -196,11 +196,11 @@ export default function Posts() {
     } catch (_) { }
   };
 
-  // ✅ Yeni ekle
-  const loadPosts = async (page = pageNumber) => {
+  const loadPosts = async (page = pageNumber, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true); // sadece silent=false iken loading aç
       setError("");
+
       const [postsRes, catsRes] = await Promise.all([
         api.get(`/posts/paged?pageNumber=${page}&pageSize=6`),
         api.get("/categories"),
@@ -229,9 +229,10 @@ export default function Posts() {
       setError("Veriler yüklenemedi");
       toast.error("Gönderiler yüklenemedi ❌");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
 
 
   const findDateField = (post) => {
@@ -352,23 +353,23 @@ export default function Posts() {
   }, [commentPageNumber, commentsOpen, commentsPost]);
 
   useEffect(() => {
-  if (!highlightId) return;
+    if (!highlightId) return;
 
-  // Render bittikten sonra elementi bul
-  const el = document.querySelector(`[data-post-id="${highlightId}"]`);
-  if (el) {
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
+    // Render bittikten sonra elementi bul
+    const el = document.querySelector(`[data-post-id="${highlightId}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
 
-  // İstersen 3 sn sonra query’i temizle
-  const t = setTimeout(() => {
-    const sp = new URLSearchParams(searchParams);
-    sp.delete("highlight");
-    setSearchParams(sp, { replace: true });
-  }, 3000);
+    // İstersen 3 sn sonra query’i temizle
+    const t = setTimeout(() => {
+      const sp = new URLSearchParams(searchParams);
+      sp.delete("highlight");
+      setSearchParams(sp, { replace: true });
+    }, 3000);
 
-  return () => clearTimeout(t);
-}, [highlightId, filteredPosts, searchParams, setSearchParams]);
+    return () => clearTimeout(t);
+  }, [highlightId, filteredPosts, searchParams, setSearchParams]);
 
 
   const openCreate = () => {
@@ -433,7 +434,7 @@ export default function Posts() {
       await send(payloadPascal);
 
       setFormOpen(false);
-      await loadPosts(pageNumber);
+      await loadPosts(pageNumber, true); // silent reload
 
       // ✅ Başarılı mesaj
       toast.success(editingPost ? "Gönderi güncellendi ✅" : "Gönderi paylaşıldı 🚀");
@@ -457,7 +458,7 @@ export default function Posts() {
     if (!confirm("Bu gönderiyi silmek istediğine emin misin?")) return;
     try {
       await api.delete(`/posts/${postId}`);
-      await loadPosts(pageNumber);
+      await loadPosts(pageNumber, true); // silent reload
 
       toast.success("Gönderi silindi 🗑️");
     } catch (err) {
@@ -668,7 +669,34 @@ export default function Posts() {
   };
 
 
-  if (loading) return <div style={styles.centerWrap}><p>Yükleniyor...</p></div>;
+if (loading) {
+  return (
+    <div style={styles.pageWrapper}>
+      <div style={styles.container}>
+        <header style={styles.header}>
+          <div>
+            <div className="skeleton" style={{ width: 200, height: 24, marginBottom: 8 }} />
+            <div className="skeleton" style={{ width: 300, height: 16 }} />
+          </div>
+          <div className="skeleton" style={{ width: 120, height: 40, borderRadius: 10 }} />
+        </header>
+
+        <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+          <div className="skeleton" style={{ width: 180, height: 40, borderRadius: 10 }} />
+          <div className="skeleton" style={{ width: 180, height: 40, borderRadius: 10 }} />
+          <div className="skeleton" style={{ flex: 1, height: 40, borderRadius: 10 }} />
+        </div>
+
+        <div style={styles.grid}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton" style={{ height: 180 }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
   if (error) return <div style={styles.centerWrap}><p style={{ color: "#ff6b6b" }}>{error}</p></div>;
 
   return (
