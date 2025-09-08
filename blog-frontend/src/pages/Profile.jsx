@@ -86,6 +86,27 @@ export default function Profile() {
     };
 
     useEffect(() => {
+        const handleStorageChange = () => {
+            const icon = localStorage.getItem("selectedIcon") || "user";
+            setUser(prev => prev ? { ...prev, icon } : prev);
+            setEditIcon(icon);
+        };
+
+        // aynı tab içinde çalışması için
+        window.addEventListener("storage", handleStorageChange);
+
+        // localStorage aynı tabda set edildiğinde de tetikle
+        const observer = new MutationObserver(() => handleStorageChange());
+        observer.observe(document, { subtree: true, childList: true });
+
+        return () => {
+            window.removeEventListener("storage", handleStorageChange);
+            observer.disconnect();
+        };
+    }, []);
+
+
+    useEffect(() => {
         const loadUser = async () => {
             try {
                 const id = getCurrentUserIdFromToken();
@@ -161,6 +182,7 @@ export default function Profile() {
             // Frontend state + local
             setUser(updated);
             localStorage.setItem("selectedIcon", editIcon);
+            window.dispatchEvent(new Event("storage"));
             setEditOpen(false);
             toast.success("Profil güncellendi ✅");
         } catch (err) {

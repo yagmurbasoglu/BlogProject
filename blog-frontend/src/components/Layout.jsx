@@ -21,6 +21,19 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedIcon = localStorage.getItem("selectedIcon") || "user";
+      setSelectedIcon(savedIcon);
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // cleanup
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+
   // LocalStorage'dan oku
   useEffect(() => {
     const savedIcon = localStorage.getItem("selectedIcon");
