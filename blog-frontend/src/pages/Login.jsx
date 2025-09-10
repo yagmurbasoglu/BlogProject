@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
-import { toast } from "react-toastify"
+import { toast } from "react-toastify";
+import { FaMoon, FaSun } from "react-icons/fa";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,24 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // ✅ Tema state
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+
+  useEffect(() => {
+    document.body.style.background =
+      theme === "dark"
+        ? "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)"
+        : "radial-gradient(1000px 500px at 10% -10%, rgba(100, 108, 255, 0.89), #ffffff), radial-gradient(1000px 500px at 110% 110%, rgba(100,108,255,0.12), #ffffff)";
+
+    document.body.style.color = theme === "dark" ? "#eeeeee" : "#222222";
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    toast.info(`Tema değiştirildi: ${theme === "light" ? "🌙 Dark" : "☀️ Light"}`);
+  };
 
   const getRolesFromToken = (token) => {
     try {
@@ -18,7 +37,11 @@ export default function Login() {
       if (!payloadPart) return { roles: [], isAdmin: false };
       const json = JSON.parse(atob(payloadPart.replace(/-/g, "+").replace(/_/g, "/")));
 
-      let rolesClaim = json["role"] || json["roles"] || json["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || [];
+      let rolesClaim =
+        json["role"] ||
+        json["roles"] ||
+        json["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
+        [];
       let rolesArr = [];
       if (Array.isArray(rolesClaim)) rolesArr = rolesClaim;
       else if (typeof rolesClaim === "string") rolesArr = rolesClaim.split(/[;,\s]+/g);
@@ -53,86 +76,77 @@ export default function Login() {
       const res = await api.post("/auth/login", { email, password });
       const raw = res?.data;
       const extracted = (raw && (raw.token || raw.accessToken || raw.jwt)) || raw;
-      if (!extracted) {
-        throw new Error("Token alınamadı");
-      }
-      localStorage.setItem("token", String(extracted));
+      if (!extracted) throw new Error("Token alınamadı");
 
+      localStorage.setItem("token", String(extracted));
       toast.success("Giriş başarılı 🎉");
 
       const { isAdmin } = getRolesFromToken(extracted);
       navigate("/posts");
-} catch (err) {
-  console.error("Login error:", {
-    message: err.message,
-    status: err.response?.status,
-    data: err.response?.data,
-  });
+    } catch (err) {
+      console.error("Login error:", err);
+      let backendMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.title ||
+        (typeof err.response?.data === "string" ? err.response.data : "");
 
-  let backendMessage = "";
+      if (backendMessage?.toLowerCase().includes("invalid credential")) {
+        backendMessage = "Email veya şifre hatalı.";
+      }
 
-  if (typeof err.response?.data === "string") {
-    backendMessage = err.response.data;
-  } else if (err.response?.data) {
-    if (err.response.data.message) backendMessage = err.response.data.message;
-    else if (err.response.data.error) backendMessage = err.response.data.error;
-    else if (err.response.data.title) backendMessage = err.response.data.title;
-  }
-
-  // 👉 Eğer backend "Invalid credential" derse, kendi mesajını yaz
-  if (backendMessage.toLowerCase().includes("invalid credential")) {
-    backendMessage = "Email veya şifre hatalı.";
-  }
-
-  const msg = backendMessage || "Giriş başarısız, bilgileri kontrol edin.";
-  setError(msg);
-  toast.error(msg);
-} finally {
-  setLoading(false);
-}
-
+      const msg = backendMessage || "Giriş başarısız, bilgileri kontrol edin.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={styles.pageWrapper}>
-      <div style={styles.card}>
+    <div style={getPageWrapper(theme)}>
+      {/* Tema Butonu */}
+      <div style={styles.themeToggle}>
+        <button onClick={toggleTheme} style={styles.themeBtn}>
+          {theme === "light" ? <FaMoon /> : <FaSun />}{" "}
+          {theme === "light" ? "Dark" : "Light"}
+        </button>
+      </div>
+
+      <div style={getCard(theme)}>
         <div style={styles.headerGroup}>
-          <h2 style={styles.title}>Giriş Yap</h2>
+          <h2 style={getText(theme)}>Giriş Yap</h2>
           <p style={styles.subtitle}>Hoş geldin! Devam etmek için oturum aç.</p>
         </div>
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.fieldGroup}>
-            <label style={styles.label} htmlFor="email">Email</label>
+            <label style={getText(theme)} htmlFor="email">Email</label>
             <input
               id="email"
               type="email"
               placeholder="ornek@mail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
+              style={getInput(theme)}
               autoComplete="email"
             />
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label} htmlFor="password">Şifre</label>
+            <label style={getText(theme)} htmlFor="password">Şifre</label>
             <input
               id="password"
               type="password"
               placeholder="En az 6 karakter"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={styles.input}
+              style={getInput(theme)}
               autoComplete="current-password"
             />
           </div>
 
-          {error && (
-            <div style={styles.errorBox}>
-              {error}
-            </div>
-          )}
+          {error && <div style={styles.errorBox}>{error}</div>}
 
           <button type="submit" disabled={loading || !isFormValid} style={{
             ...styles.button,
@@ -143,8 +157,7 @@ export default function Login() {
         </form>
 
         <div style={styles.footerText}>
-          Hesabın yok mu? {" "}
-          <Link to="/register" style={styles.link}>Kayıt ol</Link>
+          Hesabın yok mu? <Link to="/register" style={styles.link}>Kayıt ol</Link>
         </div>
       </div>
     </div>
@@ -152,40 +165,27 @@ export default function Login() {
 }
 
 const styles = {
-  pageWrapper: {
-    minHeight: "100vh",
+  themeToggle: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+  },
+  themeBtn: {
+    padding: "8px 14px",
+    borderRadius: 8,
+    border: "1px solid #646cff",
+    background: "linear-gradient(135deg, #646cff, #7a83ff)",
+    color: "white",
+    fontWeight: 600,
+    cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    padding: "24px",
-    background:
-      "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), rgba(0,0,0,0)), radial-gradient(1000px 500px at 110% 110%, rgba(100,108,255,0.25), rgba(0,0,0,0))",
-  },
-  card: {
-    width: "100%",
-    maxWidth: 440,
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 16,
-    padding: 24,
-    boxShadow: "0 10px 40px rgba(0,0,0,0.25)",
-    backdropFilter: "blur(10px)",
+    gap: 8,
   },
   headerGroup: { marginBottom: 12 },
-  title: { margin: 0, fontSize: 28 },
   subtitle: { margin: 0, opacity: 0.8, fontSize: 14 },
   form: { marginTop: 16, display: "flex", flexDirection: "column", gap: 12 },
   fieldGroup: { display: "flex", flexDirection: "column", gap: 6 },
-  label: { fontSize: 13, opacity: 0.9 },
-  input: {
-    padding: "12px 14px",
-    borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.18)",
-    background: "rgba(0,0,0,0.25)",
-    color: "inherit",
-    outline: "none",
-    transition: "border-color .2s, box-shadow .2s",
-  },
   errorBox: {
     background: "rgba(255,77,79,0.12)",
     border: "1px solid rgba(255,77,79,0.35)",
@@ -210,3 +210,38 @@ const styles = {
   footerText: { marginTop: 16, fontSize: 14, textAlign: "center", opacity: 0.9 },
   link: { color: "#8f95ff" },
 };
+
+// 🎨 Tema uyumlu stiller
+const getPageWrapper = (theme) => ({
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "24px",
+  transition: "background 0.3s, color 0.3s",
+});
+
+const getCard = (theme) => ({
+  width: "100%",
+  maxWidth: 440,
+  background: theme === "dark" ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.9)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 16,
+  padding: 24,
+  boxShadow: "0 10px 40px rgba(0,0,0,0.25)",
+  backdropFilter: "blur(10px)",
+  color: theme === "dark" ? "#eee" : "#222",
+});
+
+const getText = (theme) => ({
+  color: theme === "dark" ? "#f1f1f1" : "#111",
+});
+
+const getInput = (theme) => ({
+  padding: "12px 14px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.18)",
+  background: theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
+  color: theme === "dark" ? "#eee" : "#111",
+  outline: "none",
+});

@@ -6,6 +6,7 @@ import Admin from "./pages/Admin";
 import { ToastContainer } from "react-toastify";
 import Layout from "./components/Layout"; 
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/posts" element={<Posts />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
 

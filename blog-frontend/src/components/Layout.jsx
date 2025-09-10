@@ -22,34 +22,59 @@ export default function Layout() {
   const [role, setRole] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+
 
 useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    try {
-      const decoded = jwtDecode(token);
-      console.log("JWT Payload:", decoded);
+  const savedTheme = localStorage.getItem("theme") || "light";
+  setTheme(savedTheme);
 
-      let userRole =
-        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+  const handleThemeChange = () => {
+    setTheme(localStorage.getItem("theme") || "light");
+  };
 
-      // Eğer array ise (örn: ["Admin","User"]) ilkini al
-      if (Array.isArray(userRole)) {
-        userRole = userRole[0];
-      }
+  // ✅ hem storage hem custom event
+  window.addEventListener("storage", handleThemeChange);
+  window.addEventListener("themeChanged", handleThemeChange);
 
-      // normalize: küçük harfe çevir
-      setRole(userRole ? userRole.toLowerCase() : null);
-    } catch (err) {
-      console.error("Token çözülemedi:", err);
-    }
-  }
+  return () => {
+    window.removeEventListener("storage", handleThemeChange);
+    window.removeEventListener("themeChanged", handleThemeChange);
+  };
 }, []);
 
 
+useEffect(() => {
+  const handleStorage = () => {
+    setTheme(localStorage.getItem("theme") || "light");
+  };
+  window.addEventListener("storage", handleStorage);
+  return () => window.removeEventListener("storage", handleStorage);
+}, []);
 
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        console.log("JWT Payload:", decoded);
 
+        let userRole =
+          decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+
+        // Eğer array ise (örn: ["Admin","User"]) ilkini al
+        if (Array.isArray(userRole)) {
+          userRole = userRole[0];
+        }
+
+        // normalize: küçük harfe çevir
+        setRole(userRole ? userRole.toLowerCase() : null);
+      } catch (err) {
+        console.error("Token çözülemedi:", err);
+      }
+    }
+  }, []);
 
 
   useEffect(() => {
@@ -94,23 +119,46 @@ useEffect(() => {
     smile: <FaSmile size={20} />,
   };
 
-const navItems = [
-  { path: "/posts", label: "Gönderiler", icon: <FaHome size={16} /> },
-  ...(role === "admin" || role === "superadmin"
-    ? [{ path: "/admin", label: "Admin", icon: <FaUserShield size={16} /> }]
-    : []),
-  { path: "/profile", label: "Profil", icon: <FaUser size={16} /> },
-  { path: "/settings", label: "Ayarlar", icon: <FaCog size={16} /> },
-];
-
-
-
-
-
+  const navItems = [
+    { path: "/posts", label: "Gönderiler", icon: <FaHome size={16} /> },
+    ...(role === "admin" || role === "superadmin"
+      ? [{ path: "/admin", label: "Admin", icon: <FaUserShield size={16} /> }]
+      : []),
+    { path: "/profile", label: "Profil", icon: <FaUser size={16} /> },
+    { path: "/settings", label: "Ayarlar", icon: <FaCog size={16} /> },
+  ];
   return (
-    <div style={styles.wrapper}>
+    <div
+    style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      background:
+        theme === "light"
+          ? "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.08), #ffffff)"
+          : "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)",
+      color: theme === "light" ? "#222" : "#eee",
+    }}
+  >
       {/* Üst Navbar */}
-      <header style={styles.navbar}>
+<header
+  style={{
+    background: theme === "light" ? "white" : "rgba(0,0,0,0.3)", // ✅ dark modda şeffaf
+    backdropFilter: theme === "dark" ? "blur(6px)" : "none",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "12px 24px",
+    borderBottom:
+      theme === "light"
+        ? "1px solid #eee"
+        : "1px solid rgba(255,255,255,0.1)",
+    position: "sticky",
+    top: 0,
+    zIndex: 1000,
+  }}
+>
+
         <div style={styles.navLeft}>
           <FaReact size={28} color="#61dafb" />
           <span style={styles.logoText}>Blog Project</span>
@@ -118,17 +166,23 @@ const navItems = [
 
         <nav style={styles.navCenter}>
           {navItems.map((item) => (
-            // Link map'inde inline style’da borderBottom yerine şunu yap:
-            <Link
-              key={item.path}
-              to={item.path}
-              style={{
-                ...styles.navLink,
-                backgroundColor: location.pathname === item.path ? "#eef2ff" : "transparent",
-                color: location.pathname === item.path ? "#433ea9ff" : "#444",
-                fontWeight: location.pathname === item.path ? 600 : 500,
-              }}
-            >
+<Link
+  key={item.path}
+  to={item.path}
+  style={{
+    ...styles.navLink,
+    backgroundColor:
+      location.pathname === item.path
+        ? (theme === "light" ? "#eef2ff" : "rgba(255,255,255,0.1)")
+        : "transparent",
+    color:
+      location.pathname === item.path
+        ? (theme === "light" ? "#433ea9ff" : "#ffffff")
+        : (theme === "light" ? "#444" : "#ddd"),
+    fontWeight: location.pathname === item.path ? 600 : 500,
+  }}
+>
+
               {item.icon}
               <span>{item.label}</span>
             </Link>
@@ -250,7 +304,7 @@ const styles = {
     width: 32,
     height: 32,
     borderRadius: "50%",
-    background: "#f3f4f6",
+    background: "#4f46e5",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
