@@ -14,12 +14,43 @@ import {
   FaSmile,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { jwtDecode } from "jwt-decode";
 
 export default function Layout() {
   const [showModal, setShowModal] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState("user"); // default
+  const [role, setRole] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      console.log("JWT Payload:", decoded);
+
+      let userRole =
+        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+
+      // Eğer array ise (örn: ["Admin","User"]) ilkini al
+      if (Array.isArray(userRole)) {
+        userRole = userRole[0];
+      }
+
+      // normalize: küçük harfe çevir
+      setRole(userRole ? userRole.toLowerCase() : null);
+    } catch (err) {
+      console.error("Token çözülemedi:", err);
+    }
+  }
+}, []);
+
+
+
+
+
+
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -63,12 +94,18 @@ export default function Layout() {
     smile: <FaSmile size={20} />,
   };
 
-  const navItems = [
-    { path: "/posts", label: "Gönderiler", icon: <FaHome size={16} /> },
-    { path: "/admin", label: "Admin", icon: <FaUserShield size={16} /> },
-    { path: "/profile", label: "Profil", icon: <FaUser size={16} /> },
-    { path: "/settings", label: "Ayarlar", icon: <FaCog size={16} /> },
-  ];
+const navItems = [
+  { path: "/posts", label: "Gönderiler", icon: <FaHome size={16} /> },
+  ...(role === "admin" || role === "superadmin"
+    ? [{ path: "/admin", label: "Admin", icon: <FaUserShield size={16} /> }]
+    : []),
+  { path: "/profile", label: "Profil", icon: <FaUser size={16} /> },
+  { path: "/settings", label: "Ayarlar", icon: <FaCog size={16} /> },
+];
+
+
+
+
 
   return (
     <div style={styles.wrapper}>
