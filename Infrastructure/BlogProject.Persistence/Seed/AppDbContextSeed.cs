@@ -1,6 +1,7 @@
 ﻿using BlogProject.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogProject.Persistence.Seed
 {
@@ -48,5 +49,24 @@ namespace BlogProject.Persistence.Seed
                 }
             }
         }
+
+        public static async Task SeedDeletedCommentsAsync(AppDbContext context)
+        {
+            // Silinmiş gönderilere bağlı yorumları bul
+            var orphanedComments = await context.Comments
+                .Where(c => !c.IsDeleted && context.Posts.Any(p => p.Id == c.PostId && p.IsDeleted))
+                .ToListAsync();
+
+            if (orphanedComments.Count > 0)
+            {
+                foreach (var comment in orphanedComments)
+                {
+                    comment.IsDeleted = true;
+                }
+
+                await context.SaveChangesAsync();
+            }
+        }
+
     }
 }

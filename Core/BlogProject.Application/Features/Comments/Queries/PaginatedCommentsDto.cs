@@ -4,7 +4,7 @@ namespace BlogProject.Application.Features.Comments.Queries
 {
     public class PaginatedCommentsDto
     {
-        public List<Comment> Items { get; set; } = new();
+        public List<CommentDto> Items { get; set; } = new();
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
         public int TotalCount { get; set; }

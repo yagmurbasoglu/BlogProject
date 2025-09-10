@@ -110,9 +110,11 @@ using (var scope = app.Services.CreateScope())
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var config = services.GetRequiredService<IConfiguration>();
+    var context = services.GetRequiredService<AppDbContext>();
 
     // SuperAdmin kullanıcı seed
     await AppDbContextSeed.SeedSuperAdminAsync(userManager, roleManager,config);
+    await AppDbContextSeed.SeedDeletedCommentsAsync(context);
 }
 
 

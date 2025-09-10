@@ -3,6 +3,7 @@ using BlogProject.Application.Interfaces;
 using BlogProject.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogProject.Application.Features.Posts.Commands.DeletePost
 {
@@ -43,6 +44,19 @@ namespace BlogProject.Application.Features.Posts.Commands.DeletePost
             post.DeletedAtUtc = DateTime.UtcNow;
 
             repo.Update(post);
+
+            var commentsRepo = _uow.Repository<Comment>();
+            var comments = await commentsRepo.Query()
+                .Where(c => c.PostId == post.Id && !c.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var comment in comments)
+            {
+                comment.IsDeleted = true;
+                commentsRepo.Update(comment);
+            }
+
+
             await _uow.SaveChangesAsync(cancellationToken);
             return true;
         }

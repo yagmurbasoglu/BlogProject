@@ -171,7 +171,7 @@ namespace BlogProject.Api.Controllers
         public async Task<IActionResult> GetUserComments(Guid id)
         {
             var comments = await _context.Comments
-                .Where(c => c.AuthorId == id && !c.IsDeleted)
+                .Where(c => c.AuthorId == id && !c.IsDeleted && !c.Post.IsDeleted) // ✅ Post silinmişse de getirme
                 .Include(c => c.Post)
                 .Select(c => new
                 {
@@ -185,6 +185,7 @@ namespace BlogProject.Api.Controllers
 
             return Ok(comments);
         }
+
 
 
     }

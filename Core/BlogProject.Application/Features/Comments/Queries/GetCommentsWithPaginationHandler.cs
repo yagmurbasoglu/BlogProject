@@ -16,17 +16,33 @@ namespace BlogProject.Application.Features.Comments.Queries
 
         public async Task<PaginatedCommentsDto> Handle(GetCommentsWithPaginationQuery request, CancellationToken cancellationToken)
         {
-            var repo = _uow.Repository<Comment>();
+            var commentsQuery = _uow.Repository<Comment>().Query()
+                .Where(c => c.PostId == request.PostId && !c.IsDeleted);
 
-            var query = repo.Query()
-                .Where(c => c.PostId == request.PostId)
-                .OrderByDescending(c => c.CreatedAtUtc);
+            var usersQuery = _uow.Repository<ApplicationUser>().Query();
 
-            var totalCount = await query.CountAsync(cancellationToken);
+            // toplam sayıyı al
+            var totalCount = await commentsQuery.CountAsync(cancellationToken);
 
-            var comments = await query
+            // join ile comment + userName çek
+            var comments = await commentsQuery
+                .OrderByDescending(c => c.CreatedAtUtc)
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize)
+                .Join(
+                    usersQuery,
+                    c => c.AuthorId,
+                    u => u.Id,
+                    (c, u) => new CommentDto
+                    {
+                        Id = c.Id,
+                        Content = c.Content,
+                        AuthorId = c.AuthorId,
+                        CreatedAtUtc = c.CreatedAtUtc,
+                        AuthorName = u.UserName,
+                        IsDeleted = c.IsDeleted,
+                    }
+                )
                 .ToListAsync(cancellationToken);
 
             return new PaginatedCommentsDto

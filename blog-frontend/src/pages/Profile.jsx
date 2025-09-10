@@ -150,8 +150,7 @@ export default function Profile() {
 
                 setUserPosts(enriched);
                 const commentsRes = await api.get(`/users/${id}/comments`);
-                setUserComments(commentsRes.data || []);
-
+                setUserComments((commentsRes.data || []));
             } catch (err) {
                 console.error("Profil bilgileri yüklenemedi:", err);
             }
@@ -553,6 +552,9 @@ const styles = {
         fontSize: 14,
         color: "#444",
         marginBottom: 6,
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+        overflowWrap: "break-word",
     },
     commentDate: {
         fontSize: 12,

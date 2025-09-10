@@ -15,4 +15,11 @@ public class CommentDto
 
     [SwaggerSchema("Yorumun yapıldığı tarih (UTC)")]
     public DateTime CreatedAtUtc { get; set; }
+
+    [SwaggerSchema("Yorumu yapan kullanıcının adı")]
+    public string AuthorName { get; set; } = string.Empty;
+
+    [SwaggerSchema("Yorum silinmiş mi?")]
+    public bool IsDeleted { get; set; }
+
 }

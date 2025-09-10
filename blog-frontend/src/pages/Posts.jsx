@@ -48,10 +48,6 @@ export default function Posts() {
   const [commentPageNumber, setCommentPageNumber] = useState(1);
   const [commentTotalPages, setCommentTotalPages] = useState(1);
 
-
-
-
-
   const handleLogout = () => {
     localStorage.removeItem("token");
     setSearchParams({ page: "1" }); // çıkışta sıfırla
@@ -344,7 +340,8 @@ export default function Posts() {
     if (commentsOpen && commentsPost) {
       api.get(`/Comments/${commentsPost.id}/paged?pageNumber=${commentPageNumber}&pageSize=5`)
         .then(res => {
-          setComments(res.data.items || []);
+          setComments((res.data.items || []).filter(c => !c.isDeleted && !c.deletedAtUtc));
+
           setCommentTotalPages(res.data.totalPages);
           setCommentPageNumber(res.data.pageNumber);
         })
@@ -535,7 +532,8 @@ export default function Posts() {
       setEditingCommentId(null);
       setEditingCommentText("");
       const res = await api.get(`/Comments/${post.id}/paged?pageNumber=${commentPageNumber}&pageSize=5`);
-      setComments(res.data.items || []);
+      setComments((res.data.items || []).filter(c => !c.isDeleted && !c.deletedAtUtc));
+
       setCommentTotalPages(res.data.totalPages);
       setCommentPageNumber(res.data.pageNumber);
       const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
@@ -553,19 +551,29 @@ export default function Posts() {
       setCommentSaving(true);
       setCommentError("");
 
+      // 1) Yorum ekle
       await api.post(`/Comments`, {
         postId: String(commentsPost.id),
         authorId: currentUserId,
         content: commentText.trim()
       });
 
-      const res = await api.get(`/Comments/${commentsPost.id}`);
-      setComments(res.data || []);
-      const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
+      // 2) Güncel listeyi paged endpoint’ten çek
+      const res = await api.get(
+        `/Comments/${commentsPost.id}/paged?pageNumber=1&pageSize=5`
+      );
+
+      // 3) Listeyi güncelle
+      setComments((res.data.items || []).filter(c => !c.isDeleted && !c.deletedAtUtc));
+      setCommentTotalPages(res.data.totalPages);
+      setCommentPageNumber(res.data.pageNumber);
+
+      // 4) Count güncelle
+      const count = res.data.totalCount ?? res.data.items?.length ?? 0;
       setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+
       setCommentText("");
 
-      // ✅ Başarılı mesaj
       toast.success("Yorum eklendi 💬");
     } catch (err) {
       console.error("Add comment error:", err.response?.status, err.response?.data);
@@ -573,8 +581,6 @@ export default function Posts() {
         ? err.response.data
         : (err.response?.data?.message || "Yorum eklenemedi.");
       setCommentError(backendMessage);
-
-      // ❌ Hata mesajı
       toast.error(backendMessage || "Yorum eklenemedi ❌");
     } finally {
       setCommentSaving(false);
@@ -582,38 +588,38 @@ export default function Posts() {
   };
 
 
-  const handleDeleteComment = async (commentId) => {
-    try {
-      await api.delete(`/Comments/${commentId}`);
-      if (commentsPost) {
-        const res = await api.get(`/Comments/${commentsPost.id}`);
-        setComments(res.data || []);
-        const count = Array.isArray(res.data)
-          ? res.data.length
-          : (Array.isArray(res.data?.items)
-            ? res.data.items.length
-            : (typeof res.data?.count === "number" ? res.data.count : 0));
-        setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
-      }
+const handleDeleteComment = async (commentId) => {
+  try {
+    await api.delete(`/Comments/${commentId}`);
 
-      // ✅ Başarı mesajı
-      toast.success("Yorum silindi 🗑️");
-    } catch (err) {
-      console.error("Delete comment error:", err.response?.status, err.response?.data);
+    if (commentsPost) {
+      // ✅ paged endpoint ile güncel listeyi çek
+      const res = await api.get(
+        `/Comments/${commentsPost.id}/paged?pageNumber=1&pageSize=5`
+      );
 
-      let backendMessage =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
+      setComments((res.data.items || []).filter(c => !c.isDeleted && !c.deletedAtUtc));
+      setCommentTotalPages(res.data.totalPages);
+      setCommentPageNumber(res.data.pageNumber);
 
-      if (!backendMessage) {
-        backendMessage = "Yorum silinemedi ❌";
-      }
-
-      // ❌ Hata mesajı
-      toast.error(backendMessage);
+      // ✅ Count güncelle
+      const count = res.data.totalCount ?? res.data.items?.length ?? 0;
+      setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
     }
-  };
+
+    toast.success("Yorum silindi 🗑️");
+  } catch (err) {
+    console.error("Delete comment error:", err.response?.status, err.response?.data);
+
+    let backendMessage =
+      typeof err.response?.data === "string"
+        ? err.response.data
+        : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
+
+    toast.error(backendMessage || "Yorum silinemedi ❌");
+  }
+};
+
 
 
   const startEditComment = (comment) => {
@@ -632,21 +638,27 @@ export default function Posts() {
     try {
       setEditingCommentSaving(true);
       setCommentError("");
+
+      // 1) Yorum güncelle
       await api.put(`/Comments/${editingCommentId}`, { content: editingCommentText.trim() });
-      if (commentsPost) {
-        const res = await api.get(`/Comments/${commentsPost.id}`);
-        setComments(res.data || []);
-        const count = Array.isArray(res.data)
-          ? res.data.length
-          : (Array.isArray(res.data?.items)
-            ? res.data.items.length
-            : (typeof res.data?.count === "number" ? res.data.count : 0));
-        setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
-      }
+
+      // 2) Güncel listeyi paged endpoint’ten çek
+      const res = await api.get(
+        `/Comments/${commentsPost.id}/paged?pageNumber=1&pageSize=5`
+      );
+
+      // 3) Listeyi güncelle
+      setComments((res.data.items || []).filter(c => !c.isDeleted && !c.deletedAtUtc));
+      setCommentTotalPages(res.data.totalPages);
+      setCommentPageNumber(res.data.pageNumber);
+
+      // 4) Count güncelle
+      const count = res.data.totalCount ?? res.data.items?.length ?? 0;
+      setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+
       setEditingCommentId(null);
       setEditingCommentText("");
 
-      // ✅ Başarı mesajı
       toast.success("Yorum güncellendi ✏️");
     } catch (err) {
       console.error("Update comment error:", err.response?.status, err.response?.data);
@@ -661,7 +673,6 @@ export default function Posts() {
       }
 
       setCommentError(backendMessage);
-      // ❌ Toast hata bildirimi
       toast.error(backendMessage);
     } finally {
       setEditingCommentSaving(false);
@@ -669,33 +680,34 @@ export default function Posts() {
   };
 
 
-if (loading) {
-  return (
-    <div style={styles.pageWrapper}>
-      <div style={styles.container}>
-        <header style={styles.header}>
-          <div>
-            <div className="skeleton" style={{ width: 200, height: 24, marginBottom: 8 }} />
-            <div className="skeleton" style={{ width: 300, height: 16 }} />
+
+  if (loading) {
+    return (
+      <div style={styles.pageWrapper}>
+        <div style={styles.container}>
+          <header style={styles.header}>
+            <div>
+              <div className="skeleton" style={{ width: 200, height: 24, marginBottom: 8 }} />
+              <div className="skeleton" style={{ width: 300, height: 16 }} />
+            </div>
+            <div className="skeleton" style={{ width: 120, height: 40, borderRadius: 10 }} />
+          </header>
+
+          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+            <div className="skeleton" style={{ width: 180, height: 40, borderRadius: 10 }} />
+            <div className="skeleton" style={{ width: 180, height: 40, borderRadius: 10 }} />
+            <div className="skeleton" style={{ flex: 1, height: 40, borderRadius: 10 }} />
           </div>
-          <div className="skeleton" style={{ width: 120, height: 40, borderRadius: 10 }} />
-        </header>
 
-        <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-          <div className="skeleton" style={{ width: 180, height: 40, borderRadius: 10 }} />
-          <div className="skeleton" style={{ width: 180, height: 40, borderRadius: 10 }} />
-          <div className="skeleton" style={{ flex: 1, height: 40, borderRadius: 10 }} />
-        </div>
-
-        <div style={styles.grid}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="skeleton" style={{ height: 180 }} />
-          ))}
+          <div style={styles.grid}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: 180 }} />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   if (error) return <div style={styles.centerWrap}><p style={{ color: "#ff6b6b" }}>{error}</p></div>;
 
@@ -1032,41 +1044,60 @@ if (loading) {
                           border: "1px solid rgba(255,255,255,0.18)",
                           borderRadius: 10,
                           padding: 10,
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: 8,
+                          marginBottom: 8
                         }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#000000ff" }}>
+                            <span style={{ fontWeight: 600, color: "#433ea9ff" }}>{c.authorName}</span>
+                            <span>{formatDate(c.createdAtUtc)}</span>
+                          </div>
+
                           {editingCommentId === c.id ? (
-                            <input
-                              style={{ ...styles.input, flex: 1 }}
-                              value={editingCommentText}
-                              onChange={(e) => setEditingCommentText(e.target.value)}
-                            />
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+                              <textarea
+                                style={{ ...styles.input, minHeight: 60 }}
+                                value={editingCommentText}
+                                onChange={(e) => setEditingCommentText(e.target.value)}
+                              />
+                              <div style={{ display: "flex", gap: 8 }}>
+                                <button
+                                  style={{ ...styles.primaryBtn, ...(editingCommentSaving ? styles.buttonDisabled : {}) }}
+                                  disabled={editingCommentSaving || !editingCommentText.trim()}
+                                  onClick={handleUpdateComment}
+                                >
+                                  Kaydet
+                                </button>
+                                <button style={styles.ghostBtn} onClick={cancelEditComment}>Vazgeç</button>
+                              </div>
+                            </div>
                           ) : (
-                            <span style={{ whiteSpace: "pre-wrap" }}>{c.content || c.text}</span>
+                            <p
+                              style={{
+                                marginTop: 6,
+                                whiteSpace: "pre-wrap",     // satır sonlarını (\n) korur
+                                wordBreak: "break-word",    // uzun kelimeleri kırar
+                                overflowWrap: "break-word", // ekstra güvenlik
+                              }}
+                            >
+                              {c.content}
+                            </p>
+
                           )}
-                          {(currentUserId && String(c.userId || c.authorId) === String(currentUserId)) && (
-                            <div style={{ display: "flex", gap: 6 }}>
-                              {editingCommentId === c.id ? (
-                                <>
-                                  <button
-                                    style={{ ...styles.primaryBtn, ...(editingCommentSaving ? styles.buttonDisabled : {}) }}
-                                    disabled={editingCommentSaving || !editingCommentText.trim()}
-                                    onClick={handleUpdateComment}
-                                  >Kaydet</button>
-                                  <button style={styles.ghostBtn} onClick={cancelEditComment}>Vazgeç</button>
-                                </>
-                              ) : (
-                                <>
-                                  <button style={styles.ghostBtn} onClick={() => startEditComment(c)}>Düzenle</button>
-                                  <button style={{ ...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b" }} onClick={async () => { await handleDeleteComment(c.id); }}>Sil</button>
-                                </>
-                              )}
+
+                          {String(c.authorId) === String(currentUserId) && editingCommentId !== c.id && (
+                            <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                              <button style={styles.ghostBtn} onClick={() => startEditComment(c)}>Düzenle</button>
+                              <button
+                                style={{ ...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b" }}
+                                onClick={async () => { await handleDeleteComment(c.id); }}
+                              >
+                                Sil
+                              </button>
                             </div>
                           )}
                         </div>
                       ))}
+
+
                     </div>
                   )}
                 </div>
@@ -1249,23 +1280,24 @@ const styles = {
   modalOverlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.35)",
+    background: "rgba(0,0,0,0.45)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: 16,
-    backdropFilter: "blur(2px)",
+    backdropFilter: "blur(4px)",
   },
+
   modalCard: {
     width: "100%",
     maxWidth: 560,
-    background: "rgba(255,255,255,0.08)",
-    color: "inherit",
-    border: "1px solid rgba(255,255,255,0.2)",
+    background: "rgba(183, 182, 235, 0.62)", // neredeyse tam beyaz
+    color: "#222",                          // yazılar koyu
+    border: "1px solid rgba(0,0,0,0.1)",
     borderRadius: 14,
-    boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
-    backdropFilter: "blur(12px)",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
   },
+
   modalHeader: { padding: 16, borderBottom: "1px solid rgba(255,255,255,0.18)" },
   modalForm: { padding: 16, display: "flex", flexDirection: "column", gap: 12 },
   fieldGroup: { display: "flex", flexDirection: "column", gap: 6 },
@@ -1281,7 +1313,7 @@ const styles = {
     padding: "12px 14px",
     borderRadius: 10,
     border: "1px solid rgba(255,255,255,0.18)",
-    background: "rgba(0,0,0,0.25)",
+    background: "rgba(0, 0, 0, 0)",
     color: "inherit",
     resize: "vertical",
   },
