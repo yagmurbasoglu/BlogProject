@@ -7,6 +7,7 @@ import {
 import api from "../api/axios";
 import { toast } from "react-toastify";
 import CountUp from "react-countup";
+import { useTranslation } from "react-i18next";
 
 
 
@@ -20,6 +21,7 @@ export default function Profile() {
     const [editEmail, setEditEmail] = useState("");
     const [hoveredPost, setHoveredPost] = useState(null);
     const [hoveredComment, setHoveredComment] = useState(null);
+    const { t } = useTranslation();
 
     const navigate = useNavigate();
 
@@ -210,8 +212,8 @@ export default function Profile() {
             <div style={styles.container}>
                 <header style={styles.header}>
                     <div>
-                        <h2 style={styles.title}>Profilim</h2>
-                        <p style={styles.subtitle}>Profilini görüntüle ve yönet.</p>
+                        <h2 style={styles.title}>{t("profileTitle")}</h2>
+                        <p style={styles.subtitle}>{t("profileSubtitle")}</p>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                         {!(user.roles && user.roles.includes("SuperAdmin")) && (
@@ -223,7 +225,7 @@ export default function Profile() {
                                 }}
                                 onClick={() => setEditOpen(true)}
                             >
-                                Profili Düzenle
+                                {t("editProfile")}
                             </button>
                         )}
                         <button
@@ -234,7 +236,7 @@ export default function Profile() {
                             }}
                             onClick={() => navigate("/posts")}
                         >
-                            Geri
+                            {t("back")}
                         </button>
                     </div>
 
@@ -253,15 +255,15 @@ export default function Profile() {
 
                 <div style={styles.card}>
                     <div style={styles.infoRow}>
-                        <span style={styles.infoLabel}><FaUser /> Kullanıcı Adı</span>
+                        <span style={styles.infoLabel}><FaUser />{t("username")}</span>
                         <span style={styles.infoValue}>{user.username}</span>
                     </div>
                     <div style={styles.infoRow}>
-                        <span style={styles.infoLabel}><FaEnvelope /> E-posta</span>
+                        <span style={styles.infoLabel}><FaEnvelope /> {t("email")}</span>
                         <span style={styles.infoValue}>{user.email}</span>
                     </div>
                     <div style={styles.infoRow}>
-                        <span style={styles.infoLabel}>Seçili İkon</span>
+                        <span style={styles.infoLabel}>{t("selectedIcon")}</span>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                             <span style={styles.iconPill}>
                                 {iconMap[user.icon] || iconMap.user}
@@ -270,21 +272,21 @@ export default function Profile() {
                         </span>
                     </div>
                     <div style={styles.infoRow}>
-                        <span style={styles.infoLabel}>Kayıt Tarihi</span>
+                        <span style={styles.infoLabel}>{t("createdAt")}</span>
                         <span style={styles.infoValue}>
                             {user.createdAt ? new Date(user.createdAt).toLocaleDateString("tr-TR") : "—"}
                         </span>
                     </div>
 
                     <div style={styles.infoRow}>
-                        <span style={styles.infoLabel}>Roller</span>
+                        <span style={styles.infoLabel}>{t("roles")}</span>
                         <span style={styles.infoValue}>
                             {user.roles && user.roles.length > 0 ? user.roles.join(", ") : "Kullanıcı"}
                         </span>
                     </div>
                     <div style={styles.statsGrid}>
                         <div style={styles.statCard}>
-                            <h4>Gönderiler</h4>
+                            <h4>{t("postsCount")}</h4>
                             <p>
                                 <CountUp
                                     start={0}
@@ -295,7 +297,7 @@ export default function Profile() {
                             </p>
                         </div>
                         <div style={styles.statCard}>
-                            <h4>Yorumlar</h4>
+                            <h4>{t("commentsCount")}</h4>
                             <p>
                                 <CountUp
                                     start={0}
@@ -306,7 +308,7 @@ export default function Profile() {
                             </p>
                         </div>
                         <div style={styles.statCard}>
-                            <h4>Toplam Görüntülenme</h4>
+                            <h4>{t("totalViews")}</h4>
                             <p>
                                 <CountUp
                                     start={0}
@@ -319,7 +321,7 @@ export default function Profile() {
                     </div>
 
                     {/* Gönderilerim */}
-                    <h3 style={{ marginTop: 32, marginBottom: 12 }}>Gönderilerim</h3>
+                    <h3 style={{ marginTop: 32, marginBottom: 12 }}>{t("myPosts")}</h3>
                     {userPosts.length > 0 ? (
                         <div style={styles.grid}>
                             {userPosts.map(post => (
@@ -362,13 +364,13 @@ export default function Profile() {
                             ))}
                         </div>
                     ) : (
-                        <p>Henüz gönderin yok.</p>
+                        <p>{t("noPosts")}</p>
                     )}
 
 
 
                     {/* Yorumlarım */}
-                    <h3 style={{ marginTop: 32, marginBottom: 12 }}>Yorumlarım</h3>
+                    <h3 style={{ marginTop: 32, marginBottom: 12 }}>{t("myComments")}</h3>
                     {userComments.length > 0 ? (
                         <div style={styles.grid}>
                             {userComments.map(c => (
@@ -412,7 +414,7 @@ export default function Profile() {
                             ))}
                         </div>
                     ) : (
-                        <p>Henüz yorumun yok.</p>
+                        <p>{t("noComments")}</p>
                     )}
 
 
@@ -430,10 +432,10 @@ export default function Profile() {
                             }
                         }}
                     >
-                        <h3>Profili Düzenle</h3>
+                        <h3>{t("editProfile")}</h3>
 
                         <div style={styles.fieldGroup}>
-                            <label style={styles.label}>Kullanıcı Adı</label>
+                            <label style={styles.label}>{t("username")}</label>
                             <input
                                 style={styles.input}
                                 value={editUsername}
@@ -442,7 +444,7 @@ export default function Profile() {
                         </div>
 
                         <div style={styles.fieldGroup}>
-                            <label style={styles.label}>E-posta</label>
+                            <label style={styles.label}>{t("email")}</label>
                             <input
                                 style={styles.input}
                                 value={editEmail}
@@ -451,7 +453,7 @@ export default function Profile() {
                         </div>
 
                         <div style={styles.fieldGroup}>
-                            <label style={styles.label}>İkon Seç</label>
+                            <label style={styles.label}>{t("selectedIcon")}</label>
                             <div style={styles.iconGrid}>
                                 {Object.entries(iconMap).map(([key, icon]) => (
                                     <button
@@ -478,9 +480,9 @@ export default function Profile() {
                                     setEditIcon(user.icon);         // reset
                                 }}
                             >
-                                Vazgeç
+                                {t("cancel")}
                             </button>
-                            <button style={styles.saveBtn} onClick={handleSave}>Kaydet</button>
+                            <button style={styles.saveBtn} onClick={handleSave}>{t("save")}</button>
                         </div>
                     </div>
                 </div>
@@ -568,6 +570,7 @@ const styles = {
         textAlign: "center",
         boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
         fontWeight: 600,
+
     },
 
     pageWrapper: {
@@ -651,6 +654,8 @@ const styles = {
         backdropFilter: "blur(6px)",
         transition: "all 0.2s ease",
         cursor: "pointer",
+        wordBreak: "break-word",
+        overflowWrap: "break-word",
     },
     postCardHover: {
         transform: "translateY(-4px)",

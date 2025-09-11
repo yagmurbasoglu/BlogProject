@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify"
+import { useTranslation } from "react-i18next";
 
 export default function Admin() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [newCatName, setNewCatName] = useState("");
   const [editingCat, setEditingCat] = useState(null);
@@ -343,22 +344,22 @@ export default function Admin() {
       <div style={styles.container}>
         <header style={styles.header}>
           <div>
-            <h2 style={styles.title}>Yönetim Paneli</h2>
-            <p style={styles.subtitle}>Kategorileri ve gönderileri yönet, kullanıcıları admin yap.</p>
+            <h2 style={styles.title}>{t("adminPanel")}</h2>
+            <p style={styles.subtitle}>{t("adminSubtitle")}</p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button style={{ ...styles.ghostBtn, borderColor: "rgba(255, 77, 80, 1)", color: "#f30000ff" }} onClick={() => navigate("/posts")}>Geri</button>
+            <button style={{ ...styles.ghostBtn, borderColor: "rgba(255, 77, 80, 1)", color: "#f30000ff" }} onClick={() => navigate("/posts")}>{t("back")}</button>
           </div>
         </header>
 
         <section style={styles.blockCard}>
           <div style={styles.blockHeader}>
-            <h3 style={{ margin: 0 }}>Kategoriler</h3>
+            <h3 style={{ margin: 0 }}>{t("categories")}</h3>
           </div>
           <form onSubmit={saveCategory} style={styles.toolbar}>
-            <input style={styles.input} placeholder="Kategori adı" value={catName} onChange={(e) => setCatName(e.target.value)} />
-            <button style={{ ...styles.primaryBtn, ...(catSaving ? styles.buttonDisabled : {}) }} disabled={catSaving}>{editingCat ? "Güncelle" : "Ekle"}</button>
-            {editingCat && <button type="button" style={styles.ghostBtn} onClick={cancelEditCategory}>Vazgeç</button>}
+            <input style={styles.input} placeholder={t("categoryName")} value={catName} onChange={(e) => setCatName(e.target.value)} />
+            <button style={{ ...styles.primaryBtn, ...(catSaving ? styles.buttonDisabled : {}) }} disabled={catSaving}>{editingCat ? t("update") : t("add")}</button>
+            {editingCat && <button type="button" style={styles.ghostBtn} onClick={cancelEditCategory}>{t("cancel")}</button>}
           </form>
           <div style={styles.categoriesGrid}>
             {categories.map(c => (
@@ -372,8 +373,8 @@ export default function Admin() {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <button style={styles.ghostBtn} onClick={() => startEditCategory(c)}>Düzenle</button>
-                    <button style={{ ...styles.ghostBtn, color: "#ff6b6b", borderColor: "rgba(255,77,79,0.45)" }} onClick={() => deleteCategory(c.id)}>Sil</button>
+                    <button style={styles.ghostBtn} onClick={() => startEditCategory(c)}>{t("edit")}</button>
+                    <button style={{ ...styles.ghostBtn, color: "#ff6b6b", borderColor: "rgba(255,77,79,0.45)" }} onClick={() => deleteCategory(c.id)}>{t("delete")}</button>
                   </div>
                 </div>
               </div>
@@ -383,12 +384,12 @@ export default function Admin() {
 
         <section style={styles.blockCard}>
           <div style={styles.blockHeader}>
-            <h3 style={{ margin: 0 }}>Gönderiler</h3>
+            <h3 style={{ margin: 0 }}>{t("posts")}</h3>
           </div>
           <div style={styles.toolbar}>
             <input
               style={styles.input}
-              placeholder="Ara: başlık veya içerik"
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -397,14 +398,14 @@ export default function Admin() {
               onChange={(e) => setAdminSortBy(e.target.value)}
               style={styles.input}
             >
-              <option value="date">Tarihe Göre (Yeni → Eski)</option>
-              <option value="likes">En Çok Beğenilen</option>
-              <option value="views">En Çok Görüntülenen</option>
-              <option value="comments">En Çok Yorum Alan</option>
+              <option value="date">{t("sortByDate")}</option>
+              <option value="likes">{t("sortByLikes")}</option>
+              <option value="views">{t("sortByViews")}</option>
+              <option value="comments">{t("sortByComments")}</option>
             </select>
           </div>
           {(filteredPosts || []).length === 0 ? (
-            <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
+            <div style={styles.emptyBox}>{t("noPosts")}</div>
           ) : (
             <div style={styles.grid}>
               {filteredPosts.map(p => (
@@ -419,7 +420,7 @@ export default function Admin() {
                       style={styles.readMoreBtn}
                       onClick={() => togglePostExpansion(p.id)}
                     >
-                      {expandedPosts[p.id] ? "Daha az göster" : "Devamını oku"}
+                      {expandedPosts[p.id] ? t("readLess") : t("readMore")}
                     </button>
                   )}
                   <div style={styles.cardFooter}>
@@ -441,7 +442,7 @@ export default function Admin() {
                         }
                       }}
                     >
-                      Görüntüle
+                      {t("view")}
                     </button>
                     <button
                       style={{
@@ -451,7 +452,7 @@ export default function Admin() {
                       }}
                       onClick={() => deletePost(p.id)}
                     >
-                      Sil
+                      {t("delete")}
                     </button>
                   </div>
 
@@ -471,7 +472,7 @@ export default function Admin() {
                 }}
 
               >
-                ← Önceki
+                {t("previous")}
               </button>
 
               <span style={{ alignSelf: "center" }}>
@@ -488,7 +489,7 @@ export default function Admin() {
                 }}
 
               >
-                Sonraki →
+                {t("next")}
               </button>
             </div>
           )}
@@ -499,11 +500,11 @@ export default function Admin() {
         {isSuperAdmin && (
           <section style={styles.blockCard}>
             <div style={styles.blockHeader}>
-              <h3 style={{ margin: 0 }}>Yeni Admin Ekle</h3>
+              <h3 style={{ margin: 0 }}>{t("newAdmin")}</h3>
             </div>
             <div style={styles.toolbar}>
-              <input style={styles.input} placeholder="Kullanıcı ID (GUID)" value={promoteUserId} onChange={(e) => setPromoteUserId(e.target.value)} />
-              <button style={{ ...styles.primaryBtn, ...(promoteSaving ? styles.buttonDisabled : {}) }} disabled={promoteSaving} onClick={promoteToAdmin}>Admin Yap</button>
+              <input style={styles.input} placeholder={t("userId")} value={promoteUserId} onChange={(e) => setPromoteUserId(e.target.value)} />
+              <button style={{ ...styles.primaryBtn, ...(promoteSaving ? styles.buttonDisabled : {}) }} disabled={promoteSaving} onClick={promoteToAdmin}>{t("makeAdmin")}</button>
             </div>
           </section>
         )}
@@ -512,12 +513,12 @@ export default function Admin() {
         {isSuperAdmin && SHOW_ADMIN_LIST && (
           <section style={styles.blockCard}>
             <div style={styles.blockHeader}>
-              <h3 style={{ margin: 0 }}>Mevcut Adminler</h3>
+              <h3 style={{ margin: 0 }}>{t("currentAdmins")}</h3>
             </div>
             {adminsLoading ? (
-              <div style={styles.emptyBox}>Adminler yükleniyor...</div>
+              <div style={styles.emptyBox}>{t("loadingAdmins")}</div>
             ) : admins.length === 0 ? (
-              <div style={styles.emptyBox}>Henüz admin bulunmuyor.</div>
+              <div style={styles.emptyBox}>{t("noAdmins")}</div>
             ) : (
               <div style={styles.adminGrid}>
                 {admins.map((a) => (
@@ -542,7 +543,7 @@ export default function Admin() {
                         style={{ ...styles.ghostBtn, color: "#ff6b6b", borderColor: "rgba(255,77,79,0.45)" }}
                         onClick={() => removeAdmin(a.id)}
                       >
-                        Adminliği Kaldır
+                        {t("removeAdmin")}
                       </button>
                     </div>
                   </div>
@@ -648,6 +649,8 @@ const styles = {
     padding: 16,
     boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
     backdropFilter: "blur(6px)",
+    wordBreak: "break-word",
+    overflowWrap: "break-word",
   },
   cardHeader: { display: "flex", justifyContent: "space-between", alignItems: "center" },
   badge: {

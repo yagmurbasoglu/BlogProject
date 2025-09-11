@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import {
     FaMoon,
@@ -14,65 +15,57 @@ import {
 } from "react-icons/fa";
 
 export default function Settings() {
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const [notifications, setNotifications] = useState(true);
     const [language, setLanguage] = useState("tr");
 
     // ✅ localStorage’dan oku
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
     // ✅ tema değişince body’ye uygula
-useEffect(() => {
-  if (theme === "dark") {
-    document.body.style.background =
-      "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.52), transparent), #0d1b2a";
-    document.body.style.color = "#eee";
-  } else {
-    document.body.style.background =
-      "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.32), transparent), #ffffff";
-    document.body.style.color = "#222";
-  }
+    useEffect(() => {
+        if (theme === "dark") {
+            document.body.style.background =
+                "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.52), transparent), #0d1b2a";
+            document.body.style.color = "#eee";
+        } else {
+            document.body.style.background =
+                "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.32), transparent), #ffffff";
+            document.body.style.color = "#222";
+        }
 
-  localStorage.setItem("theme", theme);
-}, [theme]);
+        localStorage.setItem("theme", theme);
+    }, [theme]);
 
-const handleThemeChange = () => {
-  const newTheme = theme === "light" ? "dark" : "light";
-  setTheme(newTheme);
-  localStorage.setItem("theme", newTheme);
+    const handleThemeChange = () => {
+        const newTheme = theme === "light" ? "dark" : "light";
+        setTheme(newTheme);
+        localStorage.setItem("theme", newTheme);
 
-  // ✅ Layout’a haber ver
-  window.dispatchEvent(new Event("themeChanged"));
+        // ✅ Layout’a haber ver
+        window.dispatchEvent(new Event("themeChanged"));
 
-  toast.info(
-    `Tema değiştirildi: ${newTheme === "light" ? "☀️ Light" : "🌙 Dark"}`
-  );
-};
-
-
-    const handleNotifications = () => {
-        setNotifications(!notifications);
-        toast.success(
-            `Bildirimler ${!notifications ? "açıldı 🔔" : "kapandı 🔕"}`
+        toast.info(
+            `Tema değiştirildi: ${newTheme === "light" ? "☀️ Light" : "🌙 Dark"}`
         );
     };
+
+
 
     const handleLanguageChange = (e) => {
-        setLanguage(e.target.value);
-        toast.info(
-            `Dil ${e.target.value === "tr" ? "Türkçe" : "English"} olarak ayarlandı 🌍`
-        );
+        const newLang = e.target.value;
+        setLanguage(newLang);
+
+        // i18next'e haber ver
+        i18n.changeLanguage(newLang);
+
     };
+
 
     const handleChangePassword = () => {
         toast.info("🔒 Şifre değiştirme sayfası açılacak (henüz bağlanmadı)");
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        toast.info("Çıkış yapıldı 👋");
-        navigate("/login");
-    };
 
     const handleDeleteAccount = () => {
         if (confirm("Hesabını kalıcı olarak silmek istediğine emin misin?")) {
@@ -86,10 +79,10 @@ const handleThemeChange = () => {
                 <header style={styles.header}>
                     <div>
                         <h2 style={styles.title}>
-                            <FaCog style={{ marginRight: 8 }} /> Ayarlar
+                            <FaCog style={{ marginRight: 8 }} /> {t("settings")}
                         </h2>
                         <p style={styles.subtitle}>
-                            Hesap ve uygulama tercihlerini buradan yönet.
+                           {t("settingsSubtitle")}
                         </p>
                     </div>
                 </header>
@@ -97,29 +90,22 @@ const handleThemeChange = () => {
                 <div style={styles.grid}>
                     {/* Tema Ayarı */}
                     <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Tema</h3>
+                        <h3 style={styles.cardTitle}>{t("theme")}</h3>
                         <button style={styles.primaryBtn} onClick={handleThemeChange}>
-                            {theme === "light" ? <FaSun /> : <FaMoon />} Şu an:{" "}
-                            {theme === "light" ? "Light" : "Dark"}
+                            {theme === "light" ? <FaSun /> : <FaMoon />}
+                            {theme === "light" ? t("light") : t("dark")}
                         </button>
+
                     </div>
 
-                    {/* Bildirim Ayarı */}
-                    <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Bildirimler</h3>
-                        <button style={styles.ghostBtn} onClick={handleNotifications}>
-                            {notifications ? <FaBell /> : <FaBellSlash />}{" "}
-                            {notifications ? "Bildirimler Açık" : "Bildirimler Kapalı"}
-                        </button>
-                    </div>
 
                     {/* Dil Seçimi */}
                     <div style={styles.card}>
                         <h3 style={styles.cardTitle}>
-                            <FaGlobe style={{ marginRight: 6 }} /> Dil Seçimi
+                            <FaGlobe style={{ marginRight: 6 }} /> {t("language")}
                         </h3>
                         <select
-                            value={language}
+                            value={i18n.language}
                             onChange={handleLanguageChange}
                             style={styles.select}
                         >
@@ -131,25 +117,22 @@ const handleThemeChange = () => {
                     {/* Güvenlik */}
                     <div style={styles.card}>
                         <h3 style={styles.cardTitle}>
-                            <FaLock style={{ marginRight: 6 }} /> Güvenlik
+                            <FaLock style={{ marginRight: 6 }} /> {t("security")}
                         </h3>
                         <button style={styles.ghostBtn} onClick={handleChangePassword}>
-                            Şifre Değiştir
+                            {t("changePassword")}
                         </button>
                     </div>
 
                     {/* Hesap İşlemleri */}
                     <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Hesap</h3>
+                        <h3 style={styles.cardTitle}>{t("account")}</h3>
                         <div style={{ display: "flex", gap: 12 }}>
-                            <button style={styles.ghostBtn} onClick={handleLogout}>
-                                <FaSignOutAlt /> Çıkış Yap
-                            </button>
                             <button
                                 style={{ ...styles.ghostBtn, borderColor: "red", color: "red" }}
                                 onClick={handleDeleteAccount}
                             >
-                                <FaTrash /> Hesabı Sil
+                                <FaTrash /> {t("deleteAccount")}
                             </button>
                         </div>
                     </div>
@@ -253,12 +236,12 @@ const getGhostBtn = (theme) => ({
 });
 // Settings.jsx içinde
 const getPageWrapper = (theme) => ({
-  minHeight: "100vh",
-  padding: 24,
-  background:
-    theme === "light"
-      ? "radial-gradient(1000px 500px at 10% -10%, rgba(100, 108, 255, 0.23), #ffffff)"
-      : "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)",
-  color: theme === "light" ? "#222" : "#eee",
+    minHeight: "100vh",
+    padding: 24,
+    background:
+        theme === "light"
+            ? "radial-gradient(1000px 500px at 10% -10%, rgba(100, 108, 255, 0.23), #ffffff)"
+            : "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)",
+    color: theme === "light" ? "#222" : "#eee",
 });
 

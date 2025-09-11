@@ -3,8 +3,10 @@ import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaMoon, FaSun } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 export default function Login() {
+  const { t, i18n } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -14,24 +16,27 @@ export default function Login() {
   // ✅ Tema state
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
-useEffect(() => {
-  if (theme === "dark") {
-    document.body.style.background =
-      "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.52), transparent), #0d1b2a";
-    document.body.style.color = "#eee";
-  } else {
-    document.body.style.background =
-      "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.32), transparent), #ffffff";
-    document.body.style.color = "#222";
-  }
+  useEffect(() => {
+    if (theme === "dark") {
+      document.body.style.background =
+        "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.52), transparent), #0d1b2a";
+      document.body.style.color = "#eee";
+    } else {
+      document.body.style.background =
+        "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.32), transparent), #ffffff";
+      document.body.style.color = "#222";
+    }
 
-  localStorage.setItem("theme", theme);
-}, [theme]);
-
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
-    toast.info(`Tema değiştirildi: ${theme === "light" ? "🌙 Dark" : "☀️ Light"}`);
+    toast.info(
+      `${t("themeChanged")}: ${
+        theme === "light" ? "🌙 " + t("dark") : "☀️ " + t("light")
+      }`
+    );
   };
 
   const getRolesFromToken = (token) => {
@@ -40,7 +45,9 @@ useEffect(() => {
       const raw = String(token).replace(/^\"|\"$/g, "");
       const payloadPart = raw.split(".")[1];
       if (!payloadPart) return { roles: [], isAdmin: false };
-      const json = JSON.parse(atob(payloadPart.replace(/-/g, "+").replace(/_/g, "/")));
+      const json = JSON.parse(
+        atob(payloadPart.replace(/-/g, "+").replace(/_/g, "/"))
+      );
 
       let rolesClaim =
         json["role"] ||
@@ -49,10 +56,16 @@ useEffect(() => {
         [];
       let rolesArr = [];
       if (Array.isArray(rolesClaim)) rolesArr = rolesClaim;
-      else if (typeof rolesClaim === "string") rolesArr = rolesClaim.split(/[;,\s]+/g);
+      else if (typeof rolesClaim === "string")
+        rolesArr = rolesClaim.split(/[;,\s]+/g);
 
-      const normalized = rolesArr.map((r) => String(r).trim().toLowerCase()).filter(Boolean);
-      const isAdmin = normalized.includes("admin") || json.isAdmin === true || json.IsAdmin === true;
+      const normalized = rolesArr
+        .map((r) => String(r).trim().toLowerCase())
+        .filter(Boolean);
+      const isAdmin =
+        normalized.includes("admin") ||
+        json.isAdmin === true ||
+        json.IsAdmin === true;
       return { roles: normalized, isAdmin };
     } catch {
       return { roles: [], isAdmin: false };
@@ -68,7 +81,7 @@ useEffect(() => {
     e.preventDefault();
 
     if (!isFormValid) {
-      const msg = "Geçerli email ve en az 6 karakter şifre girin";
+      const msg = t("invalidLoginForm");
       setError(msg);
       toast.error(msg);
       return;
@@ -80,11 +93,12 @@ useEffect(() => {
 
       const res = await api.post("/auth/login", { email, password });
       const raw = res?.data;
-      const extracted = (raw && (raw.token || raw.accessToken || raw.jwt)) || raw;
+      const extracted =
+        (raw && (raw.token || raw.accessToken || raw.jwt)) || raw;
       if (!extracted) throw new Error("Token alınamadı");
 
       localStorage.setItem("token", String(extracted));
-      toast.success("Giriş başarılı 🎉");
+      toast.success(t("loginSuccess"));
 
       const { isAdmin } = getRolesFromToken(extracted);
       navigate("/posts");
@@ -97,10 +111,10 @@ useEffect(() => {
         (typeof err.response?.data === "string" ? err.response.data : "");
 
       if (backendMessage?.toLowerCase().includes("invalid credential")) {
-        backendMessage = "Email veya şifre hatalı.";
+        backendMessage = t("loginFailed");
       }
 
-      const msg = backendMessage || "Giriş başarısız, bilgileri kontrol edin.";
+      const msg = backendMessage || t("loginFailed");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -110,27 +124,44 @@ useEffect(() => {
 
   return (
     <div style={getPageWrapper(theme)}>
+      {/* Dil Seçici */}
+      <div style={styles.langSelect}>
+        <select
+          value={i18n.language}
+          onChange={(e) => {
+            i18n.changeLanguage(e.target.value);
+            localStorage.setItem("i18nextLng", e.target.value);
+          }}
+          style={styles.select}
+        >
+          <option value="tr">🇹🇷 Türkçe</option>
+          <option value="en">🇬🇧 English</option>
+        </select>
+      </div>
+
       {/* Tema Butonu */}
       <div style={styles.themeToggle}>
         <button onClick={toggleTheme} style={styles.themeBtn}>
           {theme === "light" ? <FaMoon /> : <FaSun />}{" "}
-          {theme === "light" ? "Dark" : "Light"}
+          {theme === "light" ? t("dark") : t("light")}
         </button>
       </div>
 
       <div style={getCard(theme)}>
         <div style={styles.headerGroup}>
-          <h2 style={getText(theme)}>Giriş Yap</h2>
-          <p style={styles.subtitle}>Hoş geldin! Devam etmek için oturum aç.</p>
+          <h2 style={getText(theme)}>{t("loginTitle")}</h2>
+          <p style={styles.subtitle}>{t("loginSubtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.fieldGroup}>
-            <label style={getText(theme)} htmlFor="email">Email</label>
+            <label style={getText(theme)} htmlFor="email">
+              {t("email")}
+            </label>
             <input
               id="email"
               type="email"
-              placeholder="ornek@mail.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={getInput(theme)}
@@ -139,11 +170,13 @@ useEffect(() => {
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={getText(theme)} htmlFor="password">Şifre</label>
+            <label style={getText(theme)} htmlFor="password">
+              {t("password")}
+            </label>
             <input
               id="password"
               type="password"
-              placeholder="En az 6 karakter"
+              placeholder={t("passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={getInput(theme)}
@@ -153,16 +186,23 @@ useEffect(() => {
 
           {error && <div style={styles.errorBox}>{error}</div>}
 
-          <button type="submit" disabled={loading || !isFormValid} style={{
-            ...styles.button,
-            ...(loading || !isFormValid ? styles.buttonDisabled : {}),
-          }}>
-            {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+          <button
+            type="submit"
+            disabled={loading || !isFormValid}
+            style={{
+              ...styles.button,
+              ...(loading || !isFormValid ? styles.buttonDisabled : {}),
+            }}
+          >
+            {loading ? t("loggingIn") : t("login")}
           </button>
         </form>
 
         <div style={styles.footerText}>
-          Hesabın yok mu? <Link to="/register" style={styles.link}>Kayıt ol</Link>
+          {t("noAccount")}{" "}
+          <Link to="/register" style={styles.link}>
+            {t("registerHere")}
+          </Link>
         </div>
       </div>
     </div>
@@ -186,6 +226,19 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 8,
+  },
+  langSelect: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+  },
+  select: {
+    padding: "6px 10px",
+    borderRadius: 6,
+    border: "1px solid #646cff",
+    background: "white",
+    fontWeight: 600,
+    cursor: "pointer",
   },
   headerGroup: { marginBottom: 12 },
   subtitle: { margin: 0, opacity: 0.8, fontSize: 14 },

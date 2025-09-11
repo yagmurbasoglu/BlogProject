@@ -2,8 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
+import { formatDistanceToNow, format } from "date-fns";
+import { enUS, tr } from "date-fns/locale";
 
 export default function Posts() {
+  const { t, i18n } = useTranslation();
   const [posts, setPosts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
@@ -229,7 +233,10 @@ export default function Posts() {
     }
   };
 
-
+  const locales = {
+    en: enUS,
+    tr: tr,
+  };
 
   const findDateField = (post) => {
     // Prefer backend field names first
@@ -251,33 +258,26 @@ export default function Posts() {
     return null;
   };
 
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
     try {
       let date = new Date(dateString);
 
-      // UTC → Local düzeltme (Türkiye için +3 saat)
+      // UTC → Local düzeltme (+3 Türkiye)
       date = new Date(date.getTime() + 3 * 60 * 60 * 1000);
 
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMinutes = Math.floor(diffMs / (1000 * 60));
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const locale = locales[i18n.language] || enUS;
+
+      // 1 günden eskiyse tam tarih göster, yeniyse "5 minutes ago" gibi
+      const diffMs = Date.now() - date.getTime();
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-      if (diffMinutes < 1) return "Az önce";
-      if (diffHours < 1) return `${diffMinutes} dakika önce`;
-      if (diffHours < 24) return `${diffHours} saat önce`;
-      if (diffDays === 1) return "Dün";
-      if (diffDays < 7) return `${diffDays} gün önce`;
-      if (diffDays < 30) return `${Math.floor(diffDays / 7)} hafta önce`;
-      if (diffDays < 365) return `${Math.floor(diffDays / 30)} ay önce`;
+      if (diffDays < 7) {
+        return formatDistanceToNow(date, { addSuffix: true, locale });
+      }
 
-      return date.toLocaleDateString("tr-TR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
+      return format(date, "dd MMMM yyyy", { locale });
     } catch {
       return "";
     }
@@ -588,37 +588,37 @@ export default function Posts() {
   };
 
 
-const handleDeleteComment = async (commentId) => {
-  try {
-    await api.delete(`/Comments/${commentId}`);
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await api.delete(`/Comments/${commentId}`);
 
-    if (commentsPost) {
-      // ✅ paged endpoint ile güncel listeyi çek
-      const res = await api.get(
-        `/Comments/${commentsPost.id}/paged?pageNumber=1&pageSize=5`
-      );
+      if (commentsPost) {
+        // ✅ paged endpoint ile güncel listeyi çek
+        const res = await api.get(
+          `/Comments/${commentsPost.id}/paged?pageNumber=1&pageSize=5`
+        );
 
-      setComments((res.data.items || []).filter(c => !c.isDeleted && !c.deletedAtUtc));
-      setCommentTotalPages(res.data.totalPages);
-      setCommentPageNumber(res.data.pageNumber);
+        setComments((res.data.items || []).filter(c => !c.isDeleted && !c.deletedAtUtc));
+        setCommentTotalPages(res.data.totalPages);
+        setCommentPageNumber(res.data.pageNumber);
 
-      // ✅ Count güncelle
-      const count = res.data.totalCount ?? res.data.items?.length ?? 0;
-      setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+        // ✅ Count güncelle
+        const count = res.data.totalCount ?? res.data.items?.length ?? 0;
+        setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
+      }
+
+      toast.success("Yorum silindi 🗑️");
+    } catch (err) {
+      console.error("Delete comment error:", err.response?.status, err.response?.data);
+
+      let backendMessage =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
+
+      toast.error(backendMessage || "Yorum silinemedi ❌");
     }
-
-    toast.success("Yorum silindi 🗑️");
-  } catch (err) {
-    console.error("Delete comment error:", err.response?.status, err.response?.data);
-
-    let backendMessage =
-      typeof err.response?.data === "string"
-        ? err.response.data
-        : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
-
-    toast.error(backendMessage || "Yorum silinemedi ❌");
-  }
-};
+  };
 
 
 
@@ -717,13 +717,14 @@ const handleDeleteComment = async (commentId) => {
         <div style={styles.container}>
           <header style={styles.header}>
             <div>
-              <h2 style={styles.title}>Blog Gönderileri</h2>
-              <p style={styles.subtitle}>Kategorilere göre keşfet, paylaş ve düzenle.</p>
+              <h2 style={styles.title}>{t("postsPageTitle")}</h2>
+              <p style={styles.subtitle}>{t("postsPageSubtitle")}</p>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button style={styles.primaryBtn} onClick={openCreate}>Yeni Gönderi</button>
+              <button style={styles.primaryBtn} onClick={openCreate}>{t("newPost")}</button>
             </div>
           </header>
+
 
           <div style={styles.toolbar}>
             <div style={styles.selectWrap}>
@@ -732,7 +733,7 @@ const handleDeleteComment = async (commentId) => {
                 onChange={(e) => setSelectedCategoryId(e.target.value)}
                 style={styles.select}
               >
-                <option value="all">Tümü</option>
+                <option value="all">{t("all")}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={String(c.id)}>{c.name}</option>
                 ))}
@@ -745,15 +746,15 @@ const handleDeleteComment = async (commentId) => {
                 onChange={(e) => setSortBy(e.target.value)}
                 style={styles.select}
               >
-                <option value="date">Tarihe Göre (Yeniden → Eskiye)</option>
-                <option value="likes">En Çok Beğenilen</option>
-                <option value="views">En Çok Görüntülenen</option>
-                <option value="comments">En Çok Yorumlu</option>
+                <option value="date">{t("sortByDate")}</option>
+                <option value="likes">{t("sortByLikes")}</option>
+                <option value="views">{t("sortByViews")}</option>
+                <option value="comments">{t("sortByComments")}</option>
               </select>
             </div>
 
             <input
-              placeholder="Ara: başlık veya içerik"
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={styles.search}
@@ -761,7 +762,7 @@ const handleDeleteComment = async (commentId) => {
           </div>
 
           {filteredPosts.length === 0 ? (
-            <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
+            <div style={styles.emptyBox}>{t("postNotFound")}</div>
           ) : (
             <div style={styles.grid}>
               {filteredPosts.map((post) => {
@@ -812,14 +813,14 @@ const handleDeleteComment = async (commentId) => {
                               const updatedRaw = post.updatedAt || post.updatedDate || post.dateUpdated || post.DateUpdated;
                               if (!createdRaw || !updatedRaw) return null;
                               if (String(updatedRaw) !== String(createdRaw)) {
-                                return <span style={styles.updatedBadge}> • Güncellendi</span>;
+                                return <span style={styles.updatedBadge}> • {t("updated")}</span>;
                               }
                               return null;
                             })()}
                           </span>
                         </div>
                       </div>
-                      <span style={styles.badge}>{categories.find(c => String(c.id) === String(post.categoryId))?.name || "Kategori"}</span>
+                      <span style={styles.badge}>{categories.find(c => String(c.id) === String(post.categoryId))?.name || t("category")}</span>
                     </div>
                     <h3 style={styles.postTitle}>{post.title}</h3>
                     <p style={styles.postContent}>
@@ -830,11 +831,11 @@ const handleDeleteComment = async (commentId) => {
                         style={styles.readMoreBtn}
                         onClick={(e) => { e.stopPropagation(); togglePostExpansion(post.id); }}
                       >
-                        {expandedPosts[post.id] ? "Daha az göster" : "Devamını oku"}
+                        {expandedPosts[post.id] ? t("readLess") : t("readMore")}
                       </button>
                     )}
                     <div style={styles.metaRow}>
-                      <span title="Görüntülenme">👁️ {post.viewCount ?? 0}</span>
+                      <span title={t("views")}>👁️ {post.viewCount ?? 0}</span>
                     </div>
                     <div style={styles.cardFooter}>
                       <button
@@ -860,7 +861,7 @@ const handleDeleteComment = async (commentId) => {
                         }}
                         onClick={(e) => { e.stopPropagation(); openComments(post); }}
                       >
-                        Yorum {commentCounts[String(post.id)] != null ? commentCounts[String(post.id)] : ""}
+                        {t("comment")} {commentCounts[String(post.id)] != null ? commentCounts[String(post.id)] : ""}
                       </button>
                       {isOwner && (
                         <>
@@ -872,7 +873,7 @@ const handleDeleteComment = async (commentId) => {
                             }}
                             onClick={(e) => { e.stopPropagation(); openEdit(post); }}
                           >
-                            Düzenle
+                            {t("edit")}
                           </button>
                           <button
                             style={{
@@ -884,7 +885,7 @@ const handleDeleteComment = async (commentId) => {
                             }}
                             onClick={(e) => { e.stopPropagation(); handleDelete(post.id); }}
                           >
-                            Sil
+                            {t("delete")}
                           </button>
                         </>
                       )}
@@ -895,16 +896,6 @@ const handleDeleteComment = async (commentId) => {
             </div>
           )}
         </div>
-
-        {filteredPosts.length === 0 ? (
-          <div style={styles.emptyBox}>Gönderi bulunamadı.</div>
-        ) : (
-          <div style={styles.grid}>
-            {filteredPosts.map((post) => {
-              // ... kart renderı
-            })}
-          </div>
-        )}
 
         {totalPages > 1 && (
           <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 12 }}>
@@ -920,7 +911,7 @@ const handleDeleteComment = async (commentId) => {
                 setSearchParams({ page: newPage.toString() });
               }}
             >
-              ← Önceki
+              {t("previous")}
             </button>
 
             <span style={{ alignSelf: "center", fontWeight: 500 }}>
@@ -939,7 +930,7 @@ const handleDeleteComment = async (commentId) => {
                 setSearchParams({ page: newPage.toString() });
               }}
             >
-              Sonraki →
+              {t("next")}
             </button>
 
           </div>
@@ -949,11 +940,11 @@ const handleDeleteComment = async (commentId) => {
           <div style={styles.modalOverlay} onClick={closeForm}>
             <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
               <div style={styles.modalHeader}>
-                <h3 style={{ margin: 0 }}>{editingPost ? "Gönderiyi Düzenle" : "Yeni Gönderi"}</h3>
+                <h3 style={{ margin: 0 }}>{editingPost ? t("editPost") : t("newPost")}</h3>
               </div>
               <form onSubmit={handleSave} style={styles.modalForm}>
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Kategori</label>
+                  <label style={styles.label}>{t("category")}</label>
                   <select
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
@@ -966,21 +957,21 @@ const handleDeleteComment = async (commentId) => {
                 </div>
 
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Başlık</label>
+                  <label style={styles.label}>{t("postTitle")}</label>
                   <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Gönderi başlığı"
+                    placeholder={t("postTitleNewPost")}
                     style={styles.input}
                   />
                 </div>
 
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>İçerik</label>
+                  <label style={styles.label}>{t("postContent")}</label>
                   <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Gönderi içeriği"
+                    placeholder={t("postContentNewPost")}
                     style={styles.textarea}
                     rows={6}
                   />
@@ -989,12 +980,12 @@ const handleDeleteComment = async (commentId) => {
                   <div style={styles.errorBox}>{formError}</div>
                 )}
                 <div style={styles.modalActions}>
-                  <button type="button" style={styles.ghostBtn} onClick={closeForm}>Vazgeç</button>
+                  <button type="button" style={styles.ghostBtn} onClick={closeForm}>{t("cancel")}</button>
                   <button type="submit" style={{
                     ...styles.primaryBtn,
                     ...(saving ? styles.buttonDisabled : {}),
                   }} disabled={saving}>
-                    {saving ? "Kaydediliyor..." : (editingPost ? "Güncelle" : "Paylaş")}
+                    {saving ? t("sending") : (editingPost ? t("update") : t("share"))}
                   </button>
                 </div>
               </form>
@@ -1017,7 +1008,7 @@ const handleDeleteComment = async (commentId) => {
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
                   {currentUserId && String(detailPost.authorId) === String(currentUserId) && (
                     <>
-                      <button style={styles.ghostBtn} onClick={() => { setDetailOpen(false); openEdit(detailPost); }}>Düzenle</button>
+                      <button style={styles.ghostBtn} onClick={() => { setDetailOpen(false); openEdit(detailPost); }}>{t("edit")}</button>
                       <button style={{ ...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b" }} onClick={() => handleDelete(detailPost.id)}>Sil</button>
                     </>
                   )}
@@ -1031,12 +1022,12 @@ const handleDeleteComment = async (commentId) => {
           <div style={styles.modalOverlay} onClick={() => setCommentsOpen(false)}>
             <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
               <div style={styles.modalHeader}>
-                <h3 style={{ margin: 0 }}>Yorumlar</h3>
+                <h3 style={{ margin: 0 }}>{t("comments")}</h3>
               </div>
               <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                 <div>
                   {(comments || []).length === 0 ? (
-                    <div style={styles.emptyBox}>Henüz yorum yok.</div>
+                    <div style={styles.emptyBox}>{t("noCommentsYet")}</div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {comments.map((c) => (
@@ -1064,9 +1055,9 @@ const handleDeleteComment = async (commentId) => {
                                   disabled={editingCommentSaving || !editingCommentText.trim()}
                                   onClick={handleUpdateComment}
                                 >
-                                  Kaydet
+                                  {t("save")}
                                 </button>
-                                <button style={styles.ghostBtn} onClick={cancelEditComment}>Vazgeç</button>
+                                <button style={styles.ghostBtn} onClick={cancelEditComment}>{t("cancel")}</button>
                               </div>
                             </div>
                           ) : (
@@ -1085,12 +1076,12 @@ const handleDeleteComment = async (commentId) => {
 
                           {String(c.authorId) === String(currentUserId) && editingCommentId !== c.id && (
                             <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                              <button style={styles.ghostBtn} onClick={() => startEditComment(c)}>Düzenle</button>
+                              <button style={styles.ghostBtn} onClick={() => startEditComment(c)}>{t("edit")}</button>
                               <button
                                 style={{ ...styles.ghostBtn, borderColor: "rgba(255,77,79,0.45)", color: "#ff6b6b" }}
                                 onClick={async () => { await handleDeleteComment(c.id); }}
                               >
-                                Sil
+                                {t("delete")}
                               </button>
                             </div>
                           )}
@@ -1130,7 +1121,7 @@ const handleDeleteComment = async (commentId) => {
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
                     style={{ ...styles.input, flex: 1 }}
-                    placeholder="Yorum yaz..."
+                    placeholder={t("addCommentPlaceholder")}
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                   />
@@ -1138,7 +1129,7 @@ const handleDeleteComment = async (commentId) => {
                     style={{ ...styles.primaryBtn, ...(commentSaving ? styles.buttonDisabled : {}) }}
                     disabled={commentSaving || !commentText.trim()}
                     onClick={handleAddComment}
-                  >Gönder</button>
+                  >{t("send")}</button>
                 </div>
               </div>
             </div>
@@ -1150,14 +1141,14 @@ const handleDeleteComment = async (commentId) => {
 }
 
 const styles = {
-highlightCard: {
-  border: "2px solid #646cff",                // ana tema rengi
-  boxShadow: "0 0 10px rgba(100,108,255,0.5)", // mavi parıltı
-  background: "rgba(255,255,255,0.12)",        // cam efekti, koyu mod uyumlu
-  backdropFilter: "blur(8px)",
-  transform: "scale(1.02)",                    // hafif büyüme
-  transition: "all 0.3s ease",
-},
+  highlightCard: {
+    border: "2px solid #646cff",                // ana tema rengi
+    boxShadow: "0 0 10px rgba(100,108,255,0.5)", // mavi parıltı
+    background: "rgba(255,255,255,0.12)",        // cam efekti, koyu mod uyumlu
+    backdropFilter: "blur(8px)",
+    transform: "scale(1.02)",                    // hafif büyüme
+    transition: "all 0.3s ease",
+  },
 
 
   pageWrapper: {
@@ -1223,6 +1214,10 @@ highlightCard: {
     backdropFilter: "blur(6px)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     cursor: "pointer",
+    wordBreak: "break-word",
+    overflowWrap: "break-word",
+      display: "flex",
+  flexDirection: "column",
   },
   cardHover: {
     transform: "translateY(-3px) scale(1.015)",
@@ -1241,8 +1236,10 @@ highlightCard: {
     border: "1px solid rgba(100,108,255,0.5)",
   },
   postTitle: { margin: "10px 0 6px 0" },
-  postContent: { margin: 0, opacity: 0.9, whiteSpace: "pre-wrap" },
-  cardFooter: { marginTop: 12, display: "flex", justifyContent: "flex-end" },
+  postContent: { margin: 0, opacity: 0.9, whiteSpace: "pre-wrap",flex: 1,  },
+  cardFooter: { marginTop: 12, display: "flex", justifyContent: "flex-end" ,gap: 8,
+  flexWrap: "wrap",
+  marginTop: "auto"},
   metaRow: { marginTop: 8, fontSize: 13, opacity: 0.85 },
   primaryBtn: {
     padding: "10px 14px",

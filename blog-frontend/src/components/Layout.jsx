@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
+import { useTranslation } from "react-i18next";
 
 export default function Layout() {
   const [showModal, setShowModal] = useState(false);
@@ -23,6 +24,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const { t } = useTranslation();
 
 
   useEffect(() => {
@@ -120,13 +122,14 @@ export default function Layout() {
   };
 
   const navItems = [
-    { path: "/posts", label: "Gönderiler", icon: <FaHome size={16} /> },
+    { path: "/posts", label: t("posts"), icon: <FaHome size={16} /> },
     ...(role === "admin" || role === "superadmin"
-      ? [{ path: "/admin", label: "Admin", icon: <FaUserShield size={16} /> }]
+      ? [{ path: "/admin", label: t("admin"), icon: <FaUserShield size={16} /> }]
       : []),
-    { path: "/profile", label: "Profil", icon: <FaUser size={16} /> },
-    { path: "/settings", label: "Ayarlar", icon: <FaCog size={16} /> },
+    { path: "/profile", label: t("profile"), icon: <FaUser size={16} /> },
+    { path: "/settings", label: t("settings"), icon: <FaCog size={16} /> },
   ];
+
   return (
     <div
       style={{
@@ -200,7 +203,7 @@ export default function Layout() {
           </button>
           <div style={styles.iconWrapper}>{iconMap[selectedIcon]}</div>
           <button onClick={handleLogout} style={styles.logoutBtn}>
-            <FaSignOutAlt size={16} /> Çıkış
+            <FaSignOutAlt size={16} /> {t("logout")}
           </button>
         </div>
       </header>
@@ -220,9 +223,9 @@ export default function Layout() {
               marginBottom: "12px",
               fontSize: "18px",
               fontWeight: 600,
-              color: "#ef4444" 
+              color: "#ef4444"
             }}>
-              Bir İkon Seç
+              {t("chooseIcon")}
             </h2>
 
             <div style={styles.iconGrid}>
@@ -237,7 +240,7 @@ export default function Layout() {
               ))}
             </div>
             <button style={styles.closeBtn} onClick={() => setShowModal(false)}>
-              Kapat
+              {t("close")}
             </button>
           </div>
         </div>

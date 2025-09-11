@@ -3,8 +3,10 @@ import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaMoon, FaSun } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 export default function Register() {
+  const { t, i18n } = useTranslation();
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,20 +17,23 @@ export default function Register() {
   // ✅ Tema state (localStorage’dan oku)
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
-useEffect(() => {
-  document.body.style.background =
-    theme === "dark"
-      ? "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)"
-      : "radial-gradient(1000px 500px at 10% -10%, rgba(100, 108, 255, 0.32), #ffffff), radial-gradient(1000px 500px at 110% 110%, rgba(100,108,255,0.12), #ffffff)";
+  useEffect(() => {
+    document.body.style.background =
+      theme === "dark"
+        ? "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)"
+        : "radial-gradient(1000px 500px at 10% -10%, rgba(100, 108, 255, 0.32), #ffffff), radial-gradient(1000px 500px at 110% 110%, rgba(100,108,255,0.12), #ffffff)";
 
-  document.body.style.color = theme === "dark" ? "#eeeeee" : "#222222";
-  localStorage.setItem("theme", theme);
-}, [theme]);
-
+    document.body.style.color = theme === "dark" ? "#eeeeee" : "#222222";
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
-    toast.info(`Tema değiştirildi: ${theme === "light" ? "🌙 Dark" : "☀️ Light"}`);
+    toast.info(
+      `${t("themeChanged")}: ${
+        theme === "light" ? "🌙 " + t("dark") : "☀️ " + t("light")
+      }`
+    );
   };
 
   const isFormValid = useMemo(() => {
@@ -43,7 +48,7 @@ useEffect(() => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid) {
-      const msg = "Lütfen geçerli bilgiler girin (kullanıcı adı ≥3, şifre ≥6)";
+      const msg = t("invalidForm");
       setError(msg);
       toast.error(msg);
       return;
@@ -53,7 +58,7 @@ useEffect(() => {
       setLoading(true);
       setError("");
       await api.post("/auth/register", { userName, email, password });
-      toast.success("Kayıt başarılı 🎉 Giriş yapabilirsiniz.");
+      toast.success(t("registerSuccess"));
       navigate("/login");
     } catch (err) {
       console.error("Register error:", err);
@@ -61,7 +66,7 @@ useEffect(() => {
         err.response?.data?.message ||
         err.response?.data?.error ||
         err.response?.data?.title ||
-        "Kayıt başarısız, tekrar deneyin.";
+        t("registerFailed");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -71,27 +76,44 @@ useEffect(() => {
 
   return (
     <div style={getPageWrapper(theme)}>
+      {/* Dil seçici */}
+      <div style={styles.langSelect}>
+        <select
+          value={i18n.language}
+          onChange={(e) => {
+            i18n.changeLanguage(e.target.value);
+            localStorage.setItem("i18nextLng", e.target.value);
+          }}
+          style={styles.select}
+        >
+          <option value="tr">🇹🇷 Türkçe</option>
+          <option value="en">🇬🇧 English</option>
+        </select>
+      </div>
+
+      {/* Tema butonu */}
       <div style={styles.themeToggle}>
         <button onClick={toggleTheme} style={styles.themeBtn}>
-          {theme === "light" ? <FaMoon /> : <FaSun />} {theme === "light" ? "Dark" : "Light"}
+          {theme === "light" ? <FaMoon /> : <FaSun />}{" "}
+          {theme === "light" ? t("dark") : t("light")}
         </button>
       </div>
 
       <div style={getCard(theme)}>
         <div style={styles.headerGroup}>
-          <h2 style={getText(theme)}>Kayıt Ol</h2>
-          <p style={styles.subtitle}>Blog platformumuza katılın ve yazmaya başlayın.</p>
+          <h2 style={getText(theme)}>{t("registerTitle")}</h2>
+          <p style={styles.subtitle}>{t("registerSubtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.fieldGroup}>
             <label style={getText(theme)} htmlFor="userName">
-              Kullanıcı Adı
+              {t("username")}
             </label>
             <input
               id="userName"
               type="text"
-              placeholder="örn. yalin.dev"
+              placeholder={t("usernamePlaceholder")}
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
               style={getInput(theme)}
@@ -101,12 +123,12 @@ useEffect(() => {
 
           <div style={styles.fieldGroup}>
             <label style={getText(theme)} htmlFor="email">
-              Email
+              {t("email")}
             </label>
             <input
               id="email"
               type="email"
-              placeholder="ornek@mail.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={getInput(theme)}
@@ -116,12 +138,12 @@ useEffect(() => {
 
           <div style={styles.fieldGroup}>
             <label style={getText(theme)} htmlFor="password">
-              Şifre
+              {t("password")}
             </label>
             <input
               id="password"
               type="password"
-              placeholder="En az 6 karakter"
+              placeholder={t("passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={getInput(theme)}
@@ -139,12 +161,15 @@ useEffect(() => {
               ...(loading || !isFormValid ? styles.buttonDisabled : {}),
             }}
           >
-            {loading ? "Kaydediliyor..." : "Kayıt Ol"}
+            {loading ? t("registering") : t("register")}
           </button>
         </form>
 
         <div style={styles.footerText}>
-          Hesabın var mı? <Link to="/login" style={styles.link}>Giriş yap</Link>
+          {t("haveAccount")}{" "}
+          <Link to="/login" style={styles.link}>
+            {t("loginHere")}
+          </Link>
         </div>
       </div>
     </div>
@@ -152,6 +177,19 @@ useEffect(() => {
 }
 
 const styles = {
+  langSelect: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+  },
+  select: {
+    padding: "6px 10px",
+    borderRadius: 6,
+    border: "1px solid #646cff",
+    background: "white",
+    fontWeight: 600,
+    cursor: "pointer",
+  },
   themeToggle: {
     position: "absolute",
     top: 20,
