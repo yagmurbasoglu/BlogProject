@@ -25,32 +25,32 @@ export default function Layout() {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
 
-useEffect(() => {
-  const savedTheme = localStorage.getItem("theme") || "light";
-  setTheme(savedTheme);
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    setTheme(savedTheme);
 
-  const handleThemeChange = () => {
-    setTheme(localStorage.getItem("theme") || "light");
-  };
+    const handleThemeChange = () => {
+      setTheme(localStorage.getItem("theme") || "light");
+    };
 
-  // ✅ hem storage hem custom event
-  window.addEventListener("storage", handleThemeChange);
-  window.addEventListener("themeChanged", handleThemeChange);
+    // ✅ hem storage hem custom event
+    window.addEventListener("storage", handleThemeChange);
+    window.addEventListener("themeChanged", handleThemeChange);
 
-  return () => {
-    window.removeEventListener("storage", handleThemeChange);
-    window.removeEventListener("themeChanged", handleThemeChange);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("storage", handleThemeChange);
+      window.removeEventListener("themeChanged", handleThemeChange);
+    };
+  }, []);
 
 
-useEffect(() => {
-  const handleStorage = () => {
-    setTheme(localStorage.getItem("theme") || "light");
-  };
-  window.addEventListener("storage", handleStorage);
-  return () => window.removeEventListener("storage", handleStorage);
-}, []);
+  useEffect(() => {
+    const handleStorage = () => {
+      setTheme(localStorage.getItem("theme") || "light");
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
 
   useEffect(() => {
@@ -129,35 +129,35 @@ useEffect(() => {
   ];
   return (
     <div
-    style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      background:
-        theme === "light"
-          ? "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.08), #ffffff)"
-          : "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)",
-      color: theme === "light" ? "#222" : "#eee",
-    }}
-  >
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background:
+          theme === "light"
+            ? "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.08), #ffffff)"
+            : "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)",
+        color: theme === "light" ? "#222" : "#eee",
+      }}
+    >
       {/* Üst Navbar */}
-<header
-  style={{
-    background: theme === "light" ? "white" : "rgba(0,0,0,0.3)", // ✅ dark modda şeffaf
-    backdropFilter: theme === "dark" ? "blur(6px)" : "none",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "12px 24px",
-    borderBottom:
-      theme === "light"
-        ? "1px solid #eee"
-        : "1px solid rgba(255,255,255,0.1)",
-    position: "sticky",
-    top: 0,
-    zIndex: 1000,
-  }}
->
+      <header
+        style={{
+          background: theme === "light" ? "white" : "rgba(0,0,0,0.3)", // ✅ dark modda şeffaf
+          backdropFilter: theme === "dark" ? "blur(6px)" : "none",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "12px 24px",
+          borderBottom:
+            theme === "light"
+              ? "1px solid #eee"
+              : "1px solid rgba(255,255,255,0.1)",
+          position: "sticky",
+          top: 0,
+          zIndex: 1000,
+        }}
+      >
 
         <div style={styles.navLeft}>
           <FaReact size={28} color="#61dafb" />
@@ -166,22 +166,22 @@ useEffect(() => {
 
         <nav style={styles.navCenter}>
           {navItems.map((item) => (
-<Link
-  key={item.path}
-  to={item.path}
-  style={{
-    ...styles.navLink,
-    backgroundColor:
-      location.pathname === item.path
-        ? (theme === "light" ? "#eef2ff" : "rgba(255,255,255,0.1)")
-        : "transparent",
-    color:
-      location.pathname === item.path
-        ? (theme === "light" ? "#433ea9ff" : "#ffffff")
-        : (theme === "light" ? "#444" : "#ddd"),
-    fontWeight: location.pathname === item.path ? 600 : 500,
-  }}
->
+            <Link
+              key={item.path}
+              to={item.path}
+              style={{
+                ...styles.navLink,
+                backgroundColor:
+                  location.pathname === item.path
+                    ? (theme === "light" ? "#eef2ff" : "rgba(255,255,255,0.1)")
+                    : "transparent",
+                color:
+                  location.pathname === item.path
+                    ? (theme === "light" ? "#433ea9ff" : "#ffffff")
+                    : (theme === "light" ? "#444" : "#ddd"),
+                fontWeight: location.pathname === item.path ? 600 : 500,
+              }}
+            >
 
               {item.icon}
               <span>{item.label}</span>
@@ -216,7 +216,15 @@ useEffect(() => {
       {showModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <h2>Bir ikon seç</h2>
+            <h2 style={{
+              marginBottom: "12px",
+              fontSize: "18px",
+              fontWeight: 600,
+              color: "#ef4444" 
+            }}>
+              Bir İkon Seç
+            </h2>
+
             <div style={styles.iconGrid}>
               {Object.entries(iconMap).map(([key, icon]) => (
                 <button

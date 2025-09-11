@@ -562,7 +562,7 @@ const styles = {
     minHeight: "100vh",
     padding: 24,
     background:
-      "radial-gradient(1000px 500px at 10% -10%, rgba(242, 100, 255, 0.18), rgba(61, 51, 51, 0)), radial-gradient(1000px 500px at 110% 110%, rgba(242, 100, 255, 0.18), rgba(0,0,0,0))",
+      "radial-gradient(1000px 500px at 10% -10%, rgba(100, 108, 255, 0.32), rgba(61, 51, 51, 0)), radial-gradient(1000px 500px at 110% 110%, rgba(242, 100, 255, 0.18), rgba(0,0,0,0))",
   },
   container: { maxWidth: 1100, margin: "0 auto" },
   centerWrap: { minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" },

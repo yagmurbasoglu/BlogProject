@@ -22,16 +22,19 @@ export default function Settings() {
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
     // ✅ tema değişince body’ye uygula
-    useEffect(() => {
-        if (theme === "dark") {
-            document.body.style.background = "#0d1b2a"; // koyu lacivert
-            document.body.style.color = "#000000ff";
-        } else {
-            document.body.style.background = "#ffffff";
-            document.body.style.color = "#222222";
-        }
-        localStorage.setItem("theme", theme);
-    }, [theme]);
+useEffect(() => {
+  if (theme === "dark") {
+    document.body.style.background =
+      "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.52), transparent), #0d1b2a";
+    document.body.style.color = "#eee";
+  } else {
+    document.body.style.background =
+      "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.32), transparent), #ffffff";
+    document.body.style.color = "#222";
+  }
+
+  localStorage.setItem("theme", theme);
+}, [theme]);
 
 const handleThemeChange = () => {
   const newTheme = theme === "light" ? "dark" : "light";

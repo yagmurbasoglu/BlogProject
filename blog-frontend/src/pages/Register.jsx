@@ -19,7 +19,7 @@ useEffect(() => {
   document.body.style.background =
     theme === "dark"
       ? "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)"
-      : "radial-gradient(1000px 500px at 10% -10%, rgba(100, 108, 255, 0.89), #ffffff), radial-gradient(1000px 500px at 110% 110%, rgba(100,108,255,0.12), #ffffff)";
+      : "radial-gradient(1000px 500px at 10% -10%, rgba(100, 108, 255, 0.32), #ffffff), radial-gradient(1000px 500px at 110% 110%, rgba(100,108,255,0.12), #ffffff)";
 
   document.body.style.color = theme === "dark" ? "#eeeeee" : "#222222";
   localStorage.setItem("theme", theme);

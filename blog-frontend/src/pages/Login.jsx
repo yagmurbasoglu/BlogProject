@@ -14,15 +14,20 @@ export default function Login() {
   // ✅ Tema state
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
-  useEffect(() => {
+useEffect(() => {
+  if (theme === "dark") {
     document.body.style.background =
-      theme === "dark"
-        ? "radial-gradient(1000px 500px at 10% -10%, rgba(100,108,255,0.25), #0d1b2a)"
-        : "radial-gradient(1000px 500px at 10% -10%, rgba(100, 108, 255, 0.89), #ffffff), radial-gradient(1000px 500px at 110% 110%, rgba(100,108,255,0.12), #ffffff)";
+      "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.52), transparent), #0d1b2a";
+    document.body.style.color = "#eee";
+  } else {
+    document.body.style.background =
+      "radial-gradient(1000px 600px at 10% -10%, rgba(100, 108, 255, 0.32), transparent), #ffffff";
+    document.body.style.color = "#222";
+  }
 
-    document.body.style.color = theme === "dark" ? "#eeeeee" : "#222222";
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+  localStorage.setItem("theme", theme);
+}, [theme]);
+
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));

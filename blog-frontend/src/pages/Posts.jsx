@@ -1150,11 +1150,15 @@ const handleDeleteComment = async (commentId) => {
 }
 
 const styles = {
-  highlightCard: {
-    border: "2px solid #433ea9ff",
-    boxShadow: "0 0 0 4px rgba(100,108,255,.15)",
-    background: "#f0f2ff",
-  },
+highlightCard: {
+  border: "2px solid #646cff",                // ana tema rengi
+  boxShadow: "0 0 10px rgba(100,108,255,0.5)", // mavi parıltı
+  background: "rgba(255,255,255,0.12)",        // cam efekti, koyu mod uyumlu
+  backdropFilter: "blur(8px)",
+  transform: "scale(1.02)",                    // hafif büyüme
+  transition: "all 0.3s ease",
+},
+
 
   pageWrapper: {
     minHeight: "100vh",
@@ -1366,12 +1370,12 @@ const styles = {
   authorName: {
     fontSize: 14,
     fontWeight: 600,
-    color: "#333",
+    color: "#f15c51ff",
   },
   postDate: {
     fontSize: 12,
     opacity: 0.9,
-    color: "#555",
+    color: "#d3807aff",
   },
   updatedBadge: {
     background: "rgba(100,108,255,0.2)",

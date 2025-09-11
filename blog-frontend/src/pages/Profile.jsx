@@ -511,61 +511,40 @@ const styles = {
         gap: "16px",
     },
 
-    postCard: {
-        background: "#fff",
+    commentCard: {
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.12)",
         borderRadius: 14,
-        padding: "16px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
+        padding: 16,
+        boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+        backdropFilter: "blur(6px)",
         transition: "all 0.2s ease",
         cursor: "pointer",
-    },
-    postCardHover: {
-        transform: "translateY(-4px)",
-        boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
-    },
-    postTitle: {
-        fontSize: 16,
-        fontWeight: 600,
-        color: "#222",
-        margin: "4px 0",
-    },
-    postContent: {
-        fontSize: 14,
-        color: "#555",
-        lineHeight: 1.4,
     },
 
-    commentCard: {
-        background: "#fff",
-        borderRadius: 14,
-        padding: "14px 16px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        fontSize: 14,
-        transition: "all 0.2s ease",
-        cursor: "pointer",
+    postCardHover: {
+        transform: "translateY(-4px)",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.3)",
     },
 
     commentContent: {
+        margin: 0,
+        opacity: 0.9,
         fontSize: 14,
-        color: "#444",
-        marginBottom: 6,
         whiteSpace: "pre-wrap",
         wordBreak: "break-word",
         overflowWrap: "break-word",
     },
     commentDate: {
         fontSize: 12,
-        color: "#888",
+        color: "#b83b2dff",
     },
 
     metaRow: {
         display: "flex",
         justifyContent: "space-between",
         fontSize: 12,
-        color: "#555",
+        color: "#b83b2dff",
         marginTop: "8px",
     },
 
@@ -583,7 +562,7 @@ const styles = {
         marginTop: "20px",
     },
     statCard: {
-        background: "#fff",
+        background: "#c5e6ee72",
         borderRadius: 12,
         padding: "16px",
         textAlign: "center",
@@ -617,10 +596,6 @@ const styles = {
     },
     displayName: { fontSize: 18, fontWeight: 700 },
     displayEmail: { fontSize: 13, opacity: 0.8 },
-    card: {
-        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 14, padding: 20, boxShadow: "0 8px 30px rgba(0,0,0,0.2)", backdropFilter: "blur(6px)",
-    },
     infoRow: {
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "10px 0", borderBottom: "1px dashed rgba(255,255,255,0.15)",
@@ -667,4 +642,31 @@ const styles = {
     iconButton: {
         background: "#f3f4f6", borderRadius: 8, padding: 8, cursor: "pointer",
     },
+    postCard: {
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: 14,
+        padding: 16,
+        boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+        backdropFilter: "blur(6px)",
+        transition: "all 0.2s ease",
+        cursor: "pointer",
+    },
+    postCardHover: {
+        transform: "translateY(-4px)",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.3)",
+    },
+    postTitle: {
+        margin: "10px 0 6px 0",
+        fontSize: 16,
+        fontWeight: 600,
+        color: "inherit", // ✅ tema ile uyumlu
+    },
+    postContent: {
+        margin: 0,
+        opacity: 0.9,
+        fontSize: 14,
+        whiteSpace: "pre-wrap",
+    },
+
 };
