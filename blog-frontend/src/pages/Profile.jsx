@@ -185,11 +185,11 @@ export default function Profile() {
             localStorage.setItem("selectedIcon", editIcon);
             window.dispatchEvent(new Event("storage"));
             setEditOpen(false);
-            toast.success("Profil güncellendi ✅");
+            toast.success(t("toast.profileUpdated"));
         } catch (err) {
             // Identity errors -> description’ları topla
             const resp = err?.response?.data;
-            let msg = "Profil güncellenemedi ❌";
+            let msg = t(toast.profileUpdateFailed);
 
             if (Array.isArray(resp)) {
                 // bazen errors array döner
@@ -340,7 +340,7 @@ export default function Profile() {
                                             navigate(`/posts?page=${page}&highlight=${post.id}`);
                                         } catch (err) {
                                             console.error("Sayfa numarası alınamadı:", err);
-                                            toast.error("Gönderi açılırken hata oluştu ❌");
+                                            toast.error(t(postOpenFailed));
                                         }
                                     }}
                                 >
@@ -665,7 +665,7 @@ const styles = {
         margin: "10px 0 6px 0",
         fontSize: 16,
         fontWeight: 600,
-        color: "inherit", // ✅ tema ile uyumlu
+        color: "inherit", 
     },
     postContent: {
         margin: 0,

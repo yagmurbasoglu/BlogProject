@@ -56,11 +56,10 @@ export default function Posts() {
     localStorage.removeItem("token");
     setSearchParams({ page: "1" }); // çıkışta sıfırla
     navigate("/login");
-    toast.info("Oturum kapatıldı 👋");
+    toast.info(t("toast.loggedOut"));
+
   };
 
-
-  // Helpers
   const getCurrentUserIdFromToken = () => {
     try {
       const token = localStorage.getItem("token");
@@ -110,7 +109,6 @@ export default function Posts() {
   };
 
   useEffect(() => {
-    // only role decode; avoid changing existing load logic timings
     const roles = getRolesFromToken();
     setIsAdmin(roles.some(r => /admin/i.test(r)));
   }, []);
@@ -167,7 +165,6 @@ export default function Posts() {
       );
       setCommentCounts(counts);
     } catch {
-      // If comment counts fail to load, continue without them
     }
   };
 
@@ -227,7 +224,8 @@ export default function Posts() {
     } catch (err) {
       console.error("Posts load error", err.response?.status, err.response?.data);
       setError("Veriler yüklenemedi");
-      toast.error("Gönderiler yüklenemedi ❌");
+      toast.error(t("toast.postsLoadFailed"));
+
     } finally {
       if (!silent) setLoading(false);
     }
@@ -239,7 +237,6 @@ export default function Posts() {
   };
 
   const findDateField = (post) => {
-    // Prefer backend field names first
     const dateFields = [
       'date', 'Date',
       'createdAtUtc', 'CreatedAtUtc',
@@ -307,7 +304,7 @@ export default function Posts() {
         term ? (p.title?.toLowerCase().includes(term) || p.content?.toLowerCase().includes(term)) : true
       );
 
-    // Apply sorting
+
     switch (sortBy) {
       case "likes":
         filtered.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
@@ -352,7 +349,7 @@ export default function Posts() {
   useEffect(() => {
     if (!highlightId) return;
 
-    // Render bittikten sonra elementi bul
+
     const el = document.querySelector(`[data-post-id="${highlightId}"]`);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -372,7 +369,8 @@ export default function Posts() {
   const openCreate = () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      toast.warn("Gönderi paylaşmak için giriş yapmalısınız ⚠️")
+      toast.warn(t("toast.mustLoginToPost"));
+
       navigate("/login");
       return;
     }
@@ -394,9 +392,9 @@ export default function Posts() {
       // Listeyi de aynı veriye senkronla
       setPosts((prev) => prev.map(p => String(p.id) === String(updatedPost.id) ? updatedPost : p));
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("Open detail error:", err.response?.status, err.response?.data);
-      toast.error("Gönderi detayı yüklenemedi ❌")
+      toast.error(t("toast.postDetailFailed"));
+
     }
   };
 
@@ -433,8 +431,9 @@ export default function Posts() {
       setFormOpen(false);
       await loadPosts(pageNumber, true); // silent reload
 
-      // ✅ Başarılı mesaj
-      toast.success(editingPost ? "Gönderi güncellendi ✅" : "Gönderi paylaşıldı 🚀");
+
+      toast.success(editingPost ? t("toast.postUpdated") : t("toast.postSaved"));
+
     } catch (err) {
       console.error("Save post error:", err.response?.status, err.response?.data);
       let backendMessage =
@@ -443,8 +442,8 @@ export default function Posts() {
           : err.response?.data?.message || "Gönderi kaydedilemedi.";
       setFormError(backendMessage);
 
-      // ❌ Hata mesajı
-      toast.error(backendMessage || "Gönderi kaydedilemedi ❌");
+
+      toast.error(backendMessage || t("toast.postSaveFailed"));
     } finally {
       setSaving(false);
     }
@@ -457,7 +456,7 @@ export default function Posts() {
       await api.delete(`/posts/${postId}`);
       await loadPosts(pageNumber, true); // silent reload
 
-      toast.success("Gönderi silindi 🗑️");
+      toast.success(t("toast.postDeleted"));
     } catch (err) {
       console.error("Delete post error:", err.response?.status, err.response?.data);
 
@@ -470,7 +469,7 @@ export default function Posts() {
         backendMessage = "Gönderi silinemedi ❌";
       }
 
-      toast.error(String(backendMessage));
+      toast.error(backendMessage || t("toast.postDeleteFailed"));
     }
   };
 
@@ -519,7 +518,8 @@ export default function Posts() {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Toggle like error:", err.response?.status, err.response?.data);
-      toast.error("Beğeni işlemi başarısız oldu ❌");
+      toast.error(t("toast.likeFailed"));
+
     }
   };
 
@@ -539,7 +539,6 @@ export default function Posts() {
       const count = Array.isArray(res.data) ? res.data.length : (Array.isArray(res.data?.items) ? res.data.items.length : (typeof res.data?.count === "number" ? res.data.count : 0));
       setCommentCounts((prev) => ({ ...prev, [String(post.id)]: count }));
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("Load comments error:", err.response?.status, err.response?.data);
       setComments([]);
     }
@@ -573,15 +572,14 @@ export default function Posts() {
       setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
 
       setCommentText("");
-
-      toast.success("Yorum eklendi 💬");
+      toast.success(t("toast.commentAdded"));
     } catch (err) {
       console.error("Add comment error:", err.response?.status, err.response?.data);
       const backendMessage = typeof err.response?.data === "string"
         ? err.response.data
         : (err.response?.data?.message || "Yorum eklenemedi.");
       setCommentError(backendMessage);
-      toast.error(backendMessage || "Yorum eklenemedi ❌");
+      toast.error(backendMessage || t("toast.commentAddFailed"));
     } finally {
       setCommentSaving(false);
     }
@@ -593,7 +591,7 @@ export default function Posts() {
       await api.delete(`/Comments/${commentId}`);
 
       if (commentsPost) {
-        // ✅ paged endpoint ile güncel listeyi çek
+        // paged endpoint ile güncel listeyi çek
         const res = await api.get(
           `/Comments/${commentsPost.id}/paged?pageNumber=1&pageSize=5`
         );
@@ -602,12 +600,12 @@ export default function Posts() {
         setCommentTotalPages(res.data.totalPages);
         setCommentPageNumber(res.data.pageNumber);
 
-        // ✅ Count güncelle
+        // Count güncelle
         const count = res.data.totalCount ?? res.data.items?.length ?? 0;
         setCommentCounts((prev) => ({ ...prev, [String(commentsPost.id)]: count }));
       }
 
-      toast.success("Yorum silindi 🗑️");
+      toast.success(t("toast.commentDeleted"));
     } catch (err) {
       console.error("Delete comment error:", err.response?.status, err.response?.data);
 
@@ -616,7 +614,7 @@ export default function Posts() {
           ? err.response.data
           : err.response?.data?.message || err.response?.data?.title || err.response?.data?.error;
 
-      toast.error(backendMessage || "Yorum silinemedi ❌");
+      toast.error(backendMessage || t("toast.commentDeleteFailed"));
     }
   };
 
@@ -659,7 +657,7 @@ export default function Posts() {
       setEditingCommentId(null);
       setEditingCommentText("");
 
-      toast.success("Yorum güncellendi ✏️");
+      toast.success(t("toast.commentUpdated"));
     } catch (err) {
       console.error("Update comment error:", err.response?.status, err.response?.data);
 
@@ -673,7 +671,7 @@ export default function Posts() {
       }
 
       setCommentError(backendMessage);
-      toast.error(backendMessage);
+      toast.error(backendMessage || t("toast.commentUpdateFailed"));
     } finally {
       setEditingCommentSaving(false);
     }
@@ -1142,11 +1140,10 @@ export default function Posts() {
 
 const styles = {
   highlightCard: {
-    border: "2px solid #646cff",                // ana tema rengi
-    boxShadow: "0 0 10px rgba(100,108,255,0.5)", // mavi parıltı
-    background: "rgba(255,255,255,0.12)",        // cam efekti, koyu mod uyumlu
-    backdropFilter: "blur(8px)",
-    transform: "scale(1.02)",                    // hafif büyüme
+    border: "2px solid #646cff",                
+    boxShadow: "0 0 10px rgba(100,108,255,0.5)", 
+    background: "rgba(255,255,255,0.12)",        
+    transform: "scale(1.02)",                   
     transition: "all 0.3s ease",
   },
 
@@ -1216,15 +1213,15 @@ const styles = {
     cursor: "pointer",
     wordBreak: "break-word",
     overflowWrap: "break-word",
-      display: "flex",
-  flexDirection: "column",
+    display: "flex",
+    flexDirection: "column",
   },
   cardHover: {
     transform: "translateY(-3px) scale(1.015)",
     boxShadow:
       "0 18px 36px rgba(0,0,0,0.28), 0 8px 16px rgba(100,108,255,0.18)",
     border: "1px solid rgba(100,108,255,0.35)",
-    background: "rgba(255,255,255,0.08)", // çok hafif aydınlat
+    background: "rgba(255,255,255,0.08)", 
   },
   cardHeader: { display: "flex", justifyContent: "space-between", alignItems: "center" },
   badge: {
@@ -1236,10 +1233,12 @@ const styles = {
     border: "1px solid rgba(100,108,255,0.5)",
   },
   postTitle: { margin: "10px 0 6px 0" },
-  postContent: { margin: 0, opacity: 0.9, whiteSpace: "pre-wrap",flex: 1,  },
-  cardFooter: { marginTop: 12, display: "flex", justifyContent: "flex-end" ,gap: 8,
-  flexWrap: "wrap",
-  marginTop: "auto"},
+  postContent: { margin: 0, opacity: 0.9, whiteSpace: "pre-wrap", flex: 1, },
+  cardFooter: {
+    marginTop: 12, display: "flex", justifyContent: "flex-end", gap: 8,
+    flexWrap: "wrap",
+    marginTop: "auto"
+  },
   metaRow: { marginTop: 8, fontSize: 13, opacity: 0.85 },
   primaryBtn: {
     padding: "10px 14px",
@@ -1292,8 +1291,8 @@ const styles = {
   modalCard: {
     width: "100%",
     maxWidth: 560,
-    background: "rgba(183, 182, 235, 0.62)", // neredeyse tam beyaz
-    color: "#222",                          // yazılar koyu
+    background: "rgba(183, 182, 235, 0.62)", 
+    color: "#222",                         
     border: "1px solid rgba(0,0,0,0.1)",
     borderRadius: 14,
     boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
@@ -1307,17 +1306,24 @@ const styles = {
     padding: "12px 14px",
     borderRadius: 10,
     border: "1px solid rgba(255,255,255,0.18)",
-    background: "rgba(0,0,0,0.25)",
-    color: "inherit",
+    background: "rgba(219, 216, 216, 0.9)",   
+    color: "#222",                          
+    "::placeholder": {
+      color: "#666",                       
+    }
   },
   textarea: {
     padding: "12px 14px",
     borderRadius: 10,
     border: "1px solid rgba(255,255,255,0.18)",
-    background: "rgba(0, 0, 0, 0)",
-    color: "inherit",
+    background: "rgba(225, 219, 219, 0.9)",   
+    color: "#222",
     resize: "vertical",
+    "::placeholder": {
+      color: "#666",
+    }
   },
+
   errorBox: {
     background: "rgba(255,77,79,0.12)",
     border: "1px solid rgba(255,77,79,0.35)",

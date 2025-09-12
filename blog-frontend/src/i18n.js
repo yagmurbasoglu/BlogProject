@@ -6,12 +6,6 @@ import LanguageDetector from "i18next-browser-languagedetector";
 const resources = {
     tr: {
         translation: {
-            categories: {
-                Teknoloji: "Teknoloji",
-                Yemek: "Yemek",
-                Bakım: "Bakım",
-                Deneme: "Deneme",
-            },
             //Ayarlar sayfası
             settings: "Ayarlar",
             settingsSubtitle: "Hesap ve uygulama tercihlerini buradan yönet.",
@@ -21,7 +15,6 @@ const resources = {
             security: "Güvenlik",
             account: "Hesap",
             changePassword: "Şifre Değiştir",
-            logout: "Çıkış Yap",
             deleteAccount: "Hesabı Sil",
             dark: "Şu an: Dark",
             light: "Şu an: Light",
@@ -31,7 +24,6 @@ const resources = {
             posts: "Gönderiler",
             admin: "Admin",
             profile: "Profil",
-            settings: "Ayarlar",
             logout: "Çıkış",
             chooseIcon: "Bir İkon Seç",
             close: "Kapat",
@@ -67,7 +59,6 @@ const resources = {
             cancel: "Vazgeç",
             edit: "Düzenle",
             delete: "Sil",
-            posts: "Gönderiler",
             searchPlaceholder: "Ara: başlık veya içerik",
             sortByDate: "Tarihe Göre (Yeni → Eski)",
             sortByLikes: "En Çok Beğenilen",
@@ -145,17 +136,47 @@ const resources = {
             invalidLoginForm: "Geçerli email ve en az 6 karakter şifre girin",
             loginSuccess: "Giriş başarılı 🎉",
             loginFailed: "Giriş başarısız, bilgileri kontrol edin.",
+            toast: {
+                langChangedTr: "🇹🇷 Dil değiştirildi: Türkçe",
+                langChangedEn: "🇬🇧 Language changed: English",
+                profileUpdated: "✅ Profil güncellendi",
+                profileUpdateFailed: "❌ Profil güncellenemedi",
+                postOpenFailed: "❌ Gönderi açılırken hata oluştu",
+                loggedOut: "👋 Oturum kapatıldı",
+                postsLoadFailed: "❌ Gönderiler yüklenemedi",
+                postSaved: "🚀 Gönderi paylaşıldı",
+                postUpdated: "✅ Gönderi güncellendi",
+                postSaveFailed: "❌ Gönderi kaydedilemedi",
+                postDeleted: "🗑️ Gönderi silindi",
+                postDeleteFailed: "❌ Gönderi silinemedi",
+                postDetailFailed: "❌ Gönderi detayı yüklenemedi",
+                mustLoginToPost: "⚠️ Gönderi paylaşmak için giriş yapmalısınız",
+                likeFailed: "❌ Beğeni işlemi başarısız oldu",
+                commentAdded: "💬 Yorum eklendi",
+                commentAddFailed: "❌ Yorum eklenemedi",
+                commentDeleted: "🗑️ Yorum silindi",
+                commentDeleteFailed: "❌ Yorum silinemedi",
+                commentUpdated: "✏️ Yorum güncellendi",
+                commentUpdateFailed: "❌ Yorum güncellenemedi",
+                adminAccessDenied: "❌ Bu sayfaya erişim için yönetici yetkisi gerekir",
+                dataLoadFailed: "❌ Veriler yüklenemedi",
+                categoryAdded: "✅ Kategori eklendi",
+                categoryUpdated: "✅ Kategori güncellendi",
+                categorySaveFailed: "❌ Kategori kaydedilemedi",
+                categoryDeleted: "🗑️ Kategori silindi",
+                categoryDeleteFailed: "❌ Kategori silinemedi",
+                postDeleteFailed: "❌ Gönderi silinemedi",
+                userPromoted: "✅ Kullanıcı admin yapıldı (tekrar giriş gerekli)",
+                userPromoteFailed: "❌ Kullanıcı admin yapılamadı",
+                userIdRequired: "⚠️ Kullanıcı ID girmeniz gerekiyor",
+                adminRemoved: "✅ Admin rolü kaldırıldı",
+                adminRemoveFailed: "❌ Admin rolü kaldırılamadı",
+            }
 
         },
     },
     en: {
         translation: {
-            categories: {
-                Teknoloji: "Technology",
-                Yemek: "Food",
-                Bakım: "Care",
-                Deneme: "Test",
-            },
             settings: "Settings",
             settingsSubtitle: "You can manage your account and app preferences here.",
             theme: "Theme",
@@ -174,7 +195,6 @@ const resources = {
             posts: "Posts",
             admin: "Admin",
             profile: "Profile",
-            settings: "Settings",
             logout: "Logout",
             chooseIcon: "Choose an Icon",
             close: "Close",
@@ -288,6 +308,43 @@ const resources = {
             invalidLoginForm: "Enter a valid email and password (min 6 characters)",
             loginSuccess: "Login successful 🎉",
             loginFailed: "Login failed, please check your credentials.",
+            toast: {
+                langChangedTr: "🇹🇷 Language changed: Turkish",
+                langChangedEn: "🇬🇧 Language changed: English",
+                profileUpdated: "✅ Profile updated",
+                profileUpdateFailed: "❌ Profile update failed",
+                postOpenFailed: "❌ Failed to open post",
+                loggedOut: "👋 Logged out",
+                postsLoadFailed: "❌ Failed to load posts",
+                postSaved: "🚀 Post published",
+                postUpdated: "✅ Post updated",
+                postSaveFailed: "❌ Post could not be saved",
+                postDeleted: "🗑️ Post deleted",
+                postDeleteFailed: "❌ Failed to delete post",
+                postDetailFailed: "❌ Failed to load post details",
+                mustLoginToPost: "⚠️ You must log in to publish a post",
+                likeFailed: "❌ Failed to toggle like",
+                commentAdded: "💬 Comment added",
+                commentAddFailed: "❌ Failed to add comment",
+                commentDeleted: "🗑️ Comment deleted",
+                commentDeleteFailed: "❌ Failed to delete comment",
+                commentUpdated: "✏️ Comment updated",
+                commentUpdateFailed: "❌ Failed to update comment",
+                adminAccessDenied: "❌ Admin access required for this page",
+                dataLoadFailed: "❌ Failed to load data",
+                categoryAdded: "✅ Category added",
+                categoryUpdated: "✅ Category updated",
+                categorySaveFailed: "❌ Failed to save category",
+                categoryDeleted: "🗑️ Category deleted",
+                categoryDeleteFailed: "❌ Failed to delete category",
+                postDeleted: "🗑️ Post deleted",
+                postDeleteFailed: "❌ Failed to delete post",
+                userPromoted: "✅ User promoted to admin (re-login required)",
+                userPromoteFailed: "❌ Failed to promote user to admin",
+                userIdRequired: "⚠️ You must enter a user ID",
+                adminRemoved: "✅ Admin role removed",
+                adminRemoveFailed: "❌ Failed to remove admin role",
+            }
 
 
         },
@@ -297,7 +354,7 @@ const resources = {
 
 
 i18n
-    .use(LanguageDetector) // ✅ önce tarayıcı diline/localStorage’a bakar
+    .use(LanguageDetector) // önce tarayıcı diline/localStorage’a bakar
     .use(initReactI18next)
     .init({
         resources,

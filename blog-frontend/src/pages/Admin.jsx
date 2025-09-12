@@ -80,7 +80,6 @@ export default function Admin() {
       const res = await api.get(`/posts/paged?pageNumber=${page}&pageSize=6`);
       const raw = res.data.items || [];
 
-      // ✅ silinmişleri gizle
       const visiblePosts = raw.filter(p => !p.isDeleted && !p.deletedAtUtc);
 
       const enriched = await enrichAdminPosts(visiblePosts);
@@ -89,11 +88,7 @@ export default function Admin() {
       setAdminPageNumber(res.data.pageNumber);
     } catch (err) {
       console.error("Admin posts load error", err.response?.status, err.response?.data);
-      const msg =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message || "Gönderiler yüklenemedi ❌";
-      toast.error(msg);
+toast.error(t("toast.postsLoadFailed"));
     }
   };
 
@@ -127,7 +122,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (!isAdmin) {
-      toast.error("Bu sayfaya erişim için yönetici yetkisi gerekir ❌");
+      toast.error(t("toast.adminAccessDenied"));
       navigate("/posts");
       return;
     }
@@ -148,7 +143,7 @@ export default function Admin() {
         // eslint-disable-next-line no-console
         console.error("Admin load error", err.response?.status, err.response?.data);
         setError("Veriler yüklenemedi.");
-        toast.error("Veriler yüklenemedi ❌");
+        toast.error(t("toast.dataLoadFailed"));
       } finally {
         setLoading(false);
       }
@@ -216,22 +211,16 @@ export default function Admin() {
       setCatSaving(true);
       if (editingCat?.id) {
         await api.put(`/categories/${editingCat.id}`, { Name: catName.trim() });
-        toast.success("Kategori başarıyla güncellendi ✅");
+        toast.success(t("toast.categoryUpdated"));
       } else {
         await api.post(`/categories`, { Name: catName.trim() });
-        toast.success("Kategori başarıyla eklendi ✅");
+        toast.success(t("toast.categoryAdded"));
       }
       const res = await api.get("/categories");
       setCategories(res.data || []);
       cancelEditCategory();
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Save category error", err.response?.status, err.response?.data);
-      const msg =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message || "Kategori kaydedilemedi ❌";
-      toast.error(msg);
+toast.error(t("toast.categorySaveFailed"));
     } finally {
       setCatSaving(false);
     }
@@ -242,14 +231,9 @@ export default function Admin() {
     try {
       await api.delete(`/categories/${id}`);
       setCategories(prev => prev.filter(c => c.id !== id));
-      toast.success("Kategori başarıyla silindi 🗑️");
+      toast.success(t("toast.categoryDeleted"));
     } catch (err) {
-      console.error("Delete category error", err.response?.status, err.response?.data);
-      const msg =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message || "Kategori silinemedi ❌";
-      toast.error(msg);
+toast.error(t("toast.categoryDeleteFailed"));
     }
   };
 
@@ -258,14 +242,9 @@ export default function Admin() {
     try {
       await api.delete(`/posts/${id}`);
       await loadAdminPosts(adminPageNumber);
-      toast.success("Gönderi başarıyla silindi 🗑️");
+      toast.success(t("toast.postDeleted"));
     } catch (err) {
-      console.error("Delete post error", err.response?.status, err.response?.data);
-      const msg =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message || "Gönderi silinemedi ❌";
-      toast.error(msg);
+      toast.error(t("toast.postDeleteFailed"));
     }
   };
 
@@ -278,22 +257,17 @@ export default function Admin() {
   // --- promoteToAdmin fonksiyonunu güncelle ---
   const promoteToAdmin = async () => {
     if (!promoteUserId.trim()) {
-      toast.warn("Kullanıcı ID girmeniz gerekiyor ⚠️");
+      toast.warn(t("toast.userIdRequired"));
       return;
     }
     try {
       setPromoteSaving(true);
       await api.post(`/Auth/promote-to-admin/${promoteUserId.trim()}`);
-      toast.success("✅ Kullanıcı admin yapıldı. Rolün aktif olabilmesi için tekrar giriş yapılmalıdır.");
+      toast.success(t("toast.userPromoted"));
       setPromoteUserId("");
       await loadAdmins(); // listeyi yenile
     } catch (err) {
-      console.error("Promote admin error", err.response?.status, err.response?.data);
-      const msg =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message || "❌ Kullanıcı admin yapılamadı.";
-      toast.error(msg);
+      toast.error(t("toast.userPromoteFailed"));
     } finally {
       setPromoteSaving(false);
     }
@@ -305,15 +279,10 @@ export default function Admin() {
     if (!confirm("Bu kullanıcının adminliğini kaldırmak istediğinize emin misiniz?")) return;
     try {
       await api.delete(`/users/remove-admin/${id}`);
-      toast.success("✅ Admin rolü kaldırıldı.");
+      toast.success(t("toast.adminRemoved"));
       setAdmins(prev => prev.filter(a => a.id !== id));
     } catch (err) {
-      console.error("Remove admin error", err.response?.status, err.response?.data);
-      const msg =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.message || "❌ Admin rolü kaldırılamadı.";
-      toast.error(msg);
+      toast.error(t("toast.adminRemoveFailed"));
     }
   };
 
@@ -322,7 +291,7 @@ export default function Admin() {
   const logout = () => {
     localStorage.removeItem("token");
     setSearchParams({ page: "1" }); // admin sayfasını sıfırla
-    toast.info("Oturum kapatıldı 👋");
+    toast.info(t("toast.loggedOut"));
     navigate("/login");
   };
 
@@ -428,15 +397,15 @@ export default function Admin() {
                       style={styles.ghostBtn}
                       onClick={async () => {
                         try {
-                          // ✅ Backend'den page number al
+                          // Backend'den page number al
                           const res = await api.get(`/posts/${p.id}/pageNumber?pageSize=6`);
                           const pageNum = res.data.pageNumber || 1;
 
-                          // ✅ Posts sayfasına highlight ile yönlendir
+                          // Posts sayfasına highlight ile yönlendir
                           navigate(`/posts?page=${pageNum}&highlight=${p.id}`);
                         } catch (err) {
                           console.error("Sayfa numarası alınamadı:", err);
-                          toast.error("Gönderi açılamadı ❌");
+                          toast.error(t("postOpenFailed"));
                           // fallback: en azından highlight çalışsın
                           navigate(`/posts?highlight=${p.id}`);
                         }
@@ -496,7 +465,7 @@ export default function Admin() {
 
         </section>
 
-        {/* ✅ Yeni Admin Ekle (sadece SuperAdmin görsün) */}
+        {/* Yeni Admin Ekle (sadece SuperAdmin görsün) */}
         {isSuperAdmin && (
           <section style={styles.blockCard}>
             <div style={styles.blockHeader}>
@@ -509,7 +478,7 @@ export default function Admin() {
           </section>
         )}
 
-        {/* ✅ Mevcut Adminler (sadece SuperAdmin görsün) */}
+        {/* Mevcut Adminler (sadece SuperAdmin görsün) */}
         {isSuperAdmin && SHOW_ADMIN_LIST && (
           <section style={styles.blockCard}>
             <div style={styles.blockHeader}>

@@ -19,10 +19,10 @@ export default function Settings() {
     const navigate = useNavigate();
     const [language, setLanguage] = useState("tr");
 
-    // ✅ localStorage’dan oku
+    // localStorage’dan oku
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
-    // ✅ tema değişince body’ye uygula
+    // tema değişince body’ye uygula
     useEffect(() => {
         if (theme === "dark") {
             document.body.style.background =
@@ -42,15 +42,14 @@ export default function Settings() {
         setTheme(newTheme);
         localStorage.setItem("theme", newTheme);
 
-        // ✅ Layout’a haber ver
+        // Layout’a haber ver
         window.dispatchEvent(new Event("themeChanged"));
 
         toast.info(
-            `Tema değiştirildi: ${newTheme === "light" ? "☀️ Light" : "🌙 Dark"}`
+            `${t("themeChanged")}: ${theme === "light" ? "🌙 " + t("dark") : "☀️ " + t("light")
+            }`
         );
     };
-
-
 
     const handleLanguageChange = (e) => {
         const newLang = e.target.value;
@@ -59,9 +58,14 @@ export default function Settings() {
         // i18next'e haber ver
         i18n.changeLanguage(newLang);
 
+        if (newLang === "tr") {
+            toast.info(t("toast.langChangedTr"));
+        } else if (newLang === "en") {
+            toast.info(t("toast.langChangedEn"));
+        }
     };
 
-
+////////////////////Eklenecek\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     const handleChangePassword = () => {
         toast.info("🔒 Şifre değiştirme sayfası açılacak (henüz bağlanmadı)");
     };
@@ -73,6 +77,7 @@ export default function Settings() {
         }
     };
 
+////////////////////Eklenecek\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     return (
         <div style={getPageWrapper(theme)}>
             <div style={styles.container}>
@@ -82,7 +87,7 @@ export default function Settings() {
                             <FaCog style={{ marginRight: 8 }} /> {t("settings")}
                         </h2>
                         <p style={styles.subtitle}>
-                           {t("settingsSubtitle")}
+                            {t("settingsSubtitle")}
                         </p>
                     </div>
                 </header>

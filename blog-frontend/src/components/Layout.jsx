@@ -35,7 +35,7 @@ export default function Layout() {
       setTheme(localStorage.getItem("theme") || "light");
     };
 
-    // ✅ hem storage hem custom event
+    // hem storage hem custom event
     window.addEventListener("storage", handleThemeChange);
     window.addEventListener("themeChanged", handleThemeChange);
 
@@ -103,7 +103,8 @@ export default function Layout() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
-    toast.info("Oturum kapatıldı 👋");
+    toast.info(t("toast.loggedOut"));
+
   };
 
   const handleIconSelect = (iconKey) => {
@@ -146,7 +147,7 @@ export default function Layout() {
       {/* Üst Navbar */}
       <header
         style={{
-          background: theme === "light" ? "white" : "rgba(0,0,0,0.3)", // ✅ dark modda şeffaf
+          background: theme === "light" ? "white" : "rgba(0,0,0,0.3)",
           backdropFilter: theme === "dark" ? "blur(6px)" : "none",
           display: "flex",
           justifyContent: "space-between",
