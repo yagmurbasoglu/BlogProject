@@ -136,6 +136,21 @@ const resources = {
             invalidLoginForm: "Geçerli email ve en az 6 karakter şifre girin",
             loginSuccess: "Giriş başarılı 🎉",
             loginFailed: "Giriş başarısız, bilgileri kontrol edin.",
+            //change password modal
+            "changePassword": "Şifre Değiştir",
+            "currentPassword": "Mevcut Şifre",
+            "newPassword": "Yeni Şifre",
+            "confirmNewPassword": "Yeni Şifre (Tekrar)",
+            "update": "Güncelle",
+            "cancel": "İptal",
+            "errors": {
+                "fillAllFields": "Lütfen tüm alanları doldurun ❌",
+                "passwordMismatch": "Yeni şifreler uyuşmuyor ❌",
+                "passwordNotChanged": "Şifre güncellenemedi ❌"
+            },
+            "success": {
+                "passwordChanged": "Şifre başarıyla güncellendi ✅"
+            },
             toast: {
                 langChangedTr: "🇹🇷 Dil değiştirildi: Türkçe",
                 langChangedEn: "🇬🇧 Language changed: English",
@@ -172,6 +187,7 @@ const resources = {
                 adminRemoved: "✅ Admin rolü kaldırıldı",
                 adminRemoveFailed: "❌ Admin rolü kaldırılamadı",
             }
+
 
         },
     },
@@ -308,6 +324,21 @@ const resources = {
             invalidLoginForm: "Enter a valid email and password (min 6 characters)",
             loginSuccess: "Login successful 🎉",
             loginFailed: "Login failed, please check your credentials.",
+            //change password modal
+            "changePassword": "Change Password",
+            "currentPassword": "Current Password",
+            "newPassword": "New Password",
+            "confirmNewPassword": "Confirm New Password",
+            "update": "Update",
+            "cancel": "Cancel",
+            "errors": {
+                "fillAllFields": "Please fill in all fields ❌",
+                "passwordMismatch": "New passwords do not match ❌",
+                "passwordNotChanged": "Password could not be updated ❌"
+            },
+            "success": {
+                "passwordChanged": "Password updated successfully ✅"
+            },
             toast: {
                 langChangedTr: "🇹🇷 Language changed: Turkish",
                 langChangedEn: "🇬🇧 Language changed: English",

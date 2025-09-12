@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using BlogProject.Api.DTOs;
 using BlogProject.Persistence;
+using System.Security.Claims;
 
 namespace BlogProject.Api.Controllers
 {
@@ -186,6 +187,32 @@ namespace BlogProject.Api.Controllers
             return Ok(comments);
         }
 
+        //şifre değiştirme
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
+        {
+            if (model.NewPassword != model.ConfirmNewPassword)
+                return BadRequest("Yeni şifreler eşleşmiyor.");
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+                return Unauthorized("Kullanıcı bulunamadı.");
+
+            // Mevcut şifre doğru mu kontrol et
+            var passwordCheck = await _userManager.CheckPasswordAsync(user, model.CurrentPassword);
+            if (!passwordCheck)
+                return BadRequest("Mevcut şifre yanlış.");
+
+            // Yeni şifreyi güncelle
+            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            return Ok("Şifre başarıyla güncellendi.");
+        }
 
 
     }

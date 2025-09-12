@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import ChangePasswordModal from "../components/ChangePasswordModal";
 import { toast } from "react-toastify";
 import {
     FaMoon,
@@ -16,6 +17,7 @@ import {
 
 export default function Settings() {
     const { t, i18n } = useTranslation();
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
     const navigate = useNavigate();
     const [language, setLanguage] = useState("tr");
 
@@ -65,9 +67,9 @@ export default function Settings() {
         }
     };
 
-////////////////////Eklenecek\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    ////////////////////Eklenecek\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     const handleChangePassword = () => {
-        toast.info("🔒 Şifre değiştirme sayfası açılacak (henüz bağlanmadı)");
+        setShowPasswordModal(true);
     };
 
 
@@ -77,7 +79,7 @@ export default function Settings() {
         }
     };
 
-////////////////////Eklenecek\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    ////////////////////Eklenecek\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     return (
         <div style={getPageWrapper(theme)}>
             <div style={styles.container}>
@@ -128,6 +130,9 @@ export default function Settings() {
                             {t("changePassword")}
                         </button>
                     </div>
+                    {showPasswordModal && (
+                        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+                    )}
 
                     {/* Hesap İşlemleri */}
                     <div style={styles.card}>
