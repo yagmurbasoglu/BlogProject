@@ -7,6 +7,8 @@ using BlogProject.Application.Features.Comments.Commands.UpdateComment;
 using BlogProject.Application.Features.Comments.Commands.DeleteComment;
 using System.Security.Claims;
 using BlogProject.Application.Features.Comments.Queries;
+using Microsoft.EntityFrameworkCore;
+using BlogProject.Persistence;
 
 namespace BlogProject.Api.Controllers;
 
@@ -15,10 +17,12 @@ namespace BlogProject.Api.Controllers;
 public class CommentsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly AppDbContext _context;
 
-    public CommentsController(IMediator mediator)
+    public CommentsController(IMediator mediator, AppDbContext context)
     {
         _mediator = mediator;
+        _context = context; 
     }
 
     // ✅ Create Comment
@@ -95,7 +99,42 @@ public class CommentsController : ControllerBase
         });
         return Ok(result);
     }
+    // ✅ Admin tüm yorumları görebilir
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public async Task<IActionResult> GetAllComments()
+    {
+        var comments = await _context.Comments
+            .Where(c => !c.IsDeleted) // sadece aktif yorumlar
+            .Include(c => c.Post)     // yoruma ait post
+            .Select(c => new
+            {
+                c.Id,
+                c.Content,
+                c.CreatedAtUtc,
+                PostId = c.Post.Id,
+                PostTitle = c.Post.Title,
+            })
+            .ToListAsync();
 
+        return Ok(comments);
+    }
+
+    // ✅ Admin istediği yorumu silebilir (soft delete)
+    [HttpDelete("admin/{id}")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public async Task<IActionResult> DeleteComment(Guid id)
+    {
+        var comment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == id);
+
+        if (comment == null || comment.IsDeleted)
+            return NotFound(new { message = "Yorum bulunamadı." });
+
+        comment.IsDeleted = true;              // ❌ Soft delete
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Yorum silindi ✅" });
+    }
 
 
 }

@@ -67,19 +67,10 @@ export default function Settings() {
         }
     };
 
-    ////////////////////Eklenecek\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     const handleChangePassword = () => {
         setShowPasswordModal(true);
     };
 
-
-    const handleDeleteAccount = () => {
-        if (confirm("Hesabını kalıcı olarak silmek istediğine emin misin?")) {
-            toast.error("Hesap silme işlemi henüz bağlanmadı ❌");
-        }
-    };
-
-    ////////////////////Eklenecek\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     return (
         <div style={getPageWrapper(theme)}>
             <div style={styles.container}>
@@ -134,18 +125,6 @@ export default function Settings() {
                         <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
                     )}
 
-                    {/* Hesap İşlemleri */}
-                    <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>{t("account")}</h3>
-                        <div style={{ display: "flex", gap: 12 }}>
-                            <button
-                                style={{ ...styles.ghostBtn, borderColor: "red", color: "red" }}
-                                onClick={handleDeleteAccount}
-                            >
-                                <FaTrash /> {t("deleteAccount")}
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
